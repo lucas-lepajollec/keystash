@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     let rawSecrets = getAllSecrets();
-    if (rawSecrets.length === 0 && !getConfig('vault_seeded')) {
+    if (process.env.KEYSTASH_SEED_DEMO === 'true' && rawSecrets.length === 0 && !getConfig('vault_seeded')) {
       seedDefaultSecrets(encryptSecret, generateMaskedPreview);
       setConfig('vault_seeded', '1');
       rawSecrets = getAllSecrets();
