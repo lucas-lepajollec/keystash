@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+  <defs>
+    <linearGradient id="keystash-grad" x1="32" y1="32" x2="224" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <!-- Vault Outer Shield / Latch -->
+  <path d="M128 28C72.77 28 28 72.77 28 128s44.77 100 100 100 100-44.77 100-100S183.23 28 128 28zm0 178c-43.08 0-78-34.92-78-78s34.92-78 78-78 78 34.92 78 78-34.92 78-78 78z" fill="url(#keystash-grad)"/>
+  <!-- Central Minimalist Key Silhouette -->
+  <path d="M128 78a28 28 0 0 0-24 42.4L78 146.4V164h17.6l7-7h11.4v-11.4l9.6-9.6A28 28 0 1 0 128 78zm0 38a10 10 0 1 1 10-10 10 10 0 0 1-10 10z" fill="url(#keystash-grad)"/>
+</svg>

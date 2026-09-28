@@ -1,0 +1,10 @@
+services:
+  keystash:
+    image: ghcr.io/lucas-lepajollec/keystash:latest
+    ports:
+      - "2509:2509"
+    volumes:
+      - ./data:/app/data
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped

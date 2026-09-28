@@ -1,0 +1,15 @@
+.git
+.github
+.project-local
+AGENTS.override.md
+node_modules
+.next
+out
+build
+data
+*.db*
+*.key
+.env*
+npm-debug.log*
+tests
+coverage
