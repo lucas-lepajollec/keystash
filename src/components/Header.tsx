@@ -38,23 +38,29 @@ export const Header: React.FC<HeaderProps> = ({
   totalCount,
 }) => {
   return (
-    <header className="sticky top-0 z-30 bg-[var(--bg-app)]/90 backdrop-blur-md border-b border-[var(--border-subtle)] pb-4 pt-4 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto space-y-4">
+    <header className="sticky top-0 z-30 bg-[var(--bg-app)]/85 backdrop-blur-xl border-b border-[var(--border-subtle)] pb-4 pt-4 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-3.5">
         {/* Top row: Brand & Actions */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-subtle)] flex items-center justify-center text-[var(--accent)] border border-[var(--accent)]/30 shadow-xs">
-              <Key className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            {/* Logo mark */}
+            <div className="relative">
+              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 opacity-40 blur-xs" />
+              <div className="relative w-8 h-8 rounded-xl bg-[var(--bg-surface-elevated)] flex items-center justify-center text-violet-400 border border-violet-500/40 shadow-xs">
+                <Key className="w-4 h-4" />
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight text-[var(--text-primary)]">
-                  {t.appName}
-                </span>
-                <span className="text-[11px] px-2 py-0.2 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-muted)] font-mono">
+
+            <div className="flex items-center gap-2.5">
+              <span className="text-base font-bold tracking-tight text-[var(--text-primary)]">
+                {t.appName}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                <span>
                   {totalCount} {t.totalSecrets}
                 </span>
-              </div>
+              </span>
             </div>
           </div>
 
@@ -62,19 +68,19 @@ export const Header: React.FC<HeaderProps> = ({
             {/* New Secret Button */}
             <button
               onClick={onNewSecret}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="btn-violet flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>{t.newSecret}</span>
             </button>
 
             {/* Language Selector */}
-            <div className="hidden sm:flex items-center gap-1 text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 bg-[var(--bg-surface)]">
-              <Globe className="w-3.5 h-3.5" />
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 bg-[var(--bg-surface)] hover:border-[var(--border-active)] transition-colors">
+              <Globe className="w-3.5 h-3.5 text-violet-400" />
               <select
                 value={currentLocale}
                 onChange={(e) => onLocaleChange(e.target.value as Locale)}
-                className="bg-transparent border-none outline-none cursor-pointer uppercase font-mono font-medium"
+                className="bg-transparent border-none outline-none cursor-pointer uppercase font-mono font-medium text-[var(--text-primary)] text-xs"
               >
                 <option value="en">EN</option>
                 <option value="fr">FR</option>
@@ -86,16 +92,16 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={onToggleTheme}
-              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)] transition-colors cursor-pointer"
               title={t.themeToggle}
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-violet-400" />}
             </button>
 
             {/* Lock Button */}
             <button
               onClick={onLockVault}
-              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-red-400 hover:border-red-500/20 transition-colors"
+              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-red-400 hover:border-red-500/30 transition-colors cursor-pointer"
               title={t.lockVault}
             >
               <Lock className="w-4 h-4" />
@@ -103,53 +109,52 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Search Input Box */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-3" />
+        {/* Raycast-style Command Search Bar */}
+        <div className="relative group">
+          <Search className="w-4 h-4 text-[var(--text-muted)] group-focus-within:text-violet-400 transition-colors absolute left-3.5 top-3" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full pl-10 pr-24 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-[var(--accent)] rounded-xl text-sm outline-none transition-all shadow-xs"
+            className="w-full pl-10 pr-24 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500/70 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
           />
-          <div className="absolute right-3 top-2.5 flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-muted)]">
-              /
-            </kbd>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded text-[var(--text-muted)]">
-              Ctrl+K
-            </kbd>
+          <div className="absolute right-3 top-2.5 flex items-center gap-1.5 pointer-events-none">
+            <kbd className="kbd-key">/</kbd>
+            <kbd className="kbd-key hidden sm:inline-flex">Ctrl+K</kbd>
           </div>
         </div>
 
-        {/* Category Pills Bar */}
+        {/* Linear-style Category Pills Bar */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={() => onSelectCategory('All')}
-            className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 py-1 rounded-lg text-xs transition-all cursor-pointer ${
               selectedCategory === 'All'
-                ? 'bg-[var(--text-primary)] text-[var(--bg-app)] font-semibold'
-                : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)]'
+                ? 'bg-violet-500/15 text-violet-400 dark:text-violet-300 border border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.15)] font-semibold'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] border border-transparent'
             }`}
           >
             {t.allCategories}
           </button>
 
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => onSelectCategory(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                selectedCategory === cat
-                  ? 'bg-[var(--text-primary)] text-[var(--bg-app)] font-semibold'
-                  : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-active)]'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => onSelectCategory(cat)}
+                className={`px-3 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-violet-500/15 text-violet-400 dark:text-violet-300 border border-violet-500/30 shadow-[0_0_12px_rgba(139,92,246,0.15)] font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] border border-transparent'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
       </div>
     </header>

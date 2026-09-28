@@ -7,7 +7,7 @@ import { SecretCard, type SecretData } from './SecretCard';
 import { SecretModal } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
-import { ShieldAlert, Plus, Keyboard } from 'lucide-react';
+import { ShieldAlert, Plus } from 'lucide-react';
 
 function subscribeToStorage(callback: () => void) {
   window.addEventListener('storage', callback);
@@ -306,8 +306,14 @@ export const VaultApp: React.FC = () => {
   // Loading state
   if (authStatus.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="ambient-glow" />
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+          <span className="text-xs font-mono text-[var(--text-muted)] tracking-wider">
+            LOADING VAULT...
+          </span>
+        </div>
       </div>
     );
   }
@@ -341,7 +347,10 @@ export const VaultApp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pb-16">
+    <div className="min-h-screen flex flex-col pb-16 relative overflow-hidden">
+      {/* Ambient background glow */}
+      <div className="ambient-glow" />
+
       {/* Header */}
       <Header
         t={t}
@@ -364,20 +373,23 @@ export const VaultApp: React.FC = () => {
       />
 
       {/* Main Secret List Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-6">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-6 relative z-10">
         {loadingSecrets ? (
-          <div className="flex justify-center py-16">
-            <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+          <div className="flex justify-center py-20">
+            <div className="w-8 h-8 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
           </div>
         ) : filteredSecrets.length === 0 ? (
-          <div className="text-center py-16 px-4 border border-dashed border-[var(--border-subtle)] rounded-2xl bg-[var(--bg-surface)]/50">
-            <div className="w-12 h-12 rounded-xl bg-[var(--bg-surface-elevated)] flex items-center justify-center text-[var(--text-muted)] mx-auto mb-3">
-              <Plus className="w-6 h-6" />
+          <div className="pro-card text-center py-16 px-6 rounded-2xl bg-[var(--bg-surface)]/80 backdrop-blur-md">
+            <div className="relative inline-flex items-center justify-center mb-4">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 opacity-20 blur-sm" />
+              <div className="relative w-12 h-12 rounded-xl bg-[var(--bg-surface-elevated)] flex items-center justify-center text-violet-400 border border-violet-500/30">
+                <Plus className="w-6 h-6" />
+              </div>
             </div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
+            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1 tracking-tight">
               {t.noSecretsFound}
             </h3>
-            <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-4">
+            <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-6">
               {t.noSecretsHint}
             </p>
             <button
@@ -385,14 +397,14 @@ export const VaultApp: React.FC = () => {
                 setEditingSecret(null);
                 setIsModalOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
+              className="btn-violet inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{t.newSecret}</span>
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {filteredSecrets.map((secret, index) => (
               <SecretCard
                 key={secret.id}
@@ -412,12 +424,35 @@ export const VaultApp: React.FC = () => {
         )}
       </main>
 
-      {/* Footer shortcut hints */}
-      <footer className="fixed bottom-0 inset-x-0 bg-[var(--bg-app)]/80 backdrop-blur-xs border-t border-[var(--border-subtle)] py-2 px-4 text-center">
-        <p className="text-[11px] text-[var(--text-muted)] flex items-center justify-center gap-1">
-          <Keyboard className="w-3.5 h-3.5 inline" />
-          <span>{t.shortcutsHint}</span>
-        </p>
+      {/* Raycast-style Tactical Shortcuts Footer */}
+      <footer className="fixed bottom-0 inset-x-0 bg-[var(--bg-app)]/85 backdrop-blur-xl border-t border-[var(--border-subtle)] py-2 px-4 z-20">
+        <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4 text-[11px] text-[var(--text-muted)] flex-wrap">
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="kbd-key">/</kbd>
+            <span className="text-[var(--text-secondary)]">{t.searchPlaceholder.split('...')[0]}</span>
+          </span>
+          <span className="text-[var(--border-subtle)]">•</span>
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="kbd-key">N</kbd>
+            <span className="text-[var(--text-secondary)]">{t.newSecret}</span>
+          </span>
+          <span className="text-[var(--border-subtle)]">•</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="kbd-key">↑</kbd>
+            <kbd className="kbd-key">↓</kbd>
+            <span className="text-[var(--text-secondary)] ml-0.5">Select</span>
+          </span>
+          <span className="text-[var(--border-subtle)]">•</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="kbd-key">C</kbd>
+            <span className="text-[var(--text-secondary)] ml-0.5">{t.copy}</span>
+          </span>
+          <span className="text-[var(--border-subtle)]">•</span>
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className="kbd-key">Esc</kbd>
+            <span className="text-[var(--text-secondary)]">{t.cancel}</span>
+          </span>
+        </div>
       </footer>
 
       {/* Secret Create / Edit Modal */}
@@ -432,27 +467,31 @@ export const VaultApp: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-2xl p-6">
-            <div className="flex items-center gap-3 mb-3 text-red-500">
-              <ShieldAlert className="w-6 h-6" />
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                {t.confirmDeleteTitle}
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="pro-card w-full max-w-sm rounded-2xl shadow-2xl p-6 bg-[var(--bg-surface)]/95 border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 mb-3 text-red-400">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                  {t.confirmDeleteTitle}
+                </h3>
+              </div>
             </div>
-            <p className="text-xs text-[var(--text-secondary)] mb-6">
+            <p className="text-xs text-[var(--text-secondary)] mb-6 leading-relaxed">
               {t.confirmDeleteMessage}
             </p>
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2.5">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)]"
+                className="px-3.5 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 onClick={() => handleDeleteSecret(deleteId)}
-                className="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-xs"
+                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 {t.delete}
               </button>
