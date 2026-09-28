@@ -6,6 +6,7 @@ import { SecretRow, type SecretData } from './SecretRow';
 import { SecretModal } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
+import { KeyStashLogo } from './KeyStashLogo';
 import { Plus, Search, Globe, Sun, Moon, Lock, ShieldAlert } from 'lucide-react';
 import { copyToClipboard } from '@/lib/clipboard';
 
@@ -365,7 +366,7 @@ export const VaultApp: React.FC = () => {
         <header className="flex items-center justify-between gap-4 pb-6">
           {/* Brand */}
           <div className="flex items-center gap-2.5">
-            <span className="text-violet-400 font-bold text-base select-none">◇</span>
+            <KeyStashLogo className="w-5 h-5 shrink-0" />
             <span className="font-semibold text-base tracking-tight text-[var(--text-primary)]">
               {t.appName}
             </span>
@@ -472,9 +473,7 @@ export const VaultApp: React.FC = () => {
           ) : filteredSecrets.length === 0 ? (
             /* Seamless empty state on canvas */
             <div className="flex flex-col items-center justify-center py-24 px-4 text-center select-none">
-              <div className="w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-violet-400 mb-3">
-                <span className="text-sm font-bold">◇</span>
-              </div>
+              <KeyStashLogo className="w-8 h-8 mb-3 opacity-90" />
               <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-tight mb-1">
                 {t.emptyTitle}
               </h3>

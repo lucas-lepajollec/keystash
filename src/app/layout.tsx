@@ -6,8 +6,13 @@ export const metadata: Metadata = {
   description: 'Ultra-fast, self-hosted API token and secret manager for homelab and NAS.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/assets/logo.svg',
-    apple: '/assets/logo.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/assets/logo.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   appleWebApp: {
     capable: true,
