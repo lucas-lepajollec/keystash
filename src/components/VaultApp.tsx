@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react';
 import { translations, type Locale, type Translations } from '@/lib/i18n';
-import { Header } from './Header';
-import { SecretCard, type SecretData } from './SecretCard';
+import { Sidebar } from './Sidebar';
+import { VaultToolbar } from './VaultToolbar';
+import { SecretRow, type SecretData } from './SecretRow';
 import { SecretModal } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
@@ -54,6 +55,7 @@ export const VaultApp: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,7 +176,7 @@ export const VaultApp: React.FC = () => {
   }, [secrets, searchQuery, selectedCategory]);
 
   // Extract all categories
-  const categories = useMemo(() => {
+  const rawCategories = useMemo(() => {
     const set = new Set<string>();
     secrets.forEach((s) => {
       if (s.category && s.category !== 'General') set.add(s.category);
@@ -183,7 +185,20 @@ export const VaultApp: React.FC = () => {
     return Array.from(set);
   }, [secrets]);
 
-  // Copy secret with feedback
+  // Categories with counts for Sidebar
+  const categoryCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    secrets.forEach((s) => {
+      const cat = s.category || 'General';
+      map[cat] = (map[cat] || 0) + 1;
+    });
+    return rawCategories.map((c) => ({
+      name: c,
+      count: map[c] || 0,
+    }));
+  }, [rawCategories, secrets]);
+
+  // Copy secret with instant feedback
   const handleCopy = (secret: SecretData) => {
     if (!secret.value) return;
     navigator.clipboard.writeText(secret.value);
@@ -193,7 +208,7 @@ export const VaultApp: React.FC = () => {
     }, 2000);
   };
 
-  // Global Keyboard shortcuts
+  // Global Keyboard shortcuts (Raycast interaction model)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -209,19 +224,21 @@ export const VaultApp: React.FC = () => {
         return;
       }
 
-      // Close modal or escape search
+      // Close modal, sidebar, or escape search
       if (e.key === 'Escape') {
         if (isModalOpen) {
           setIsModalOpen(false);
         } else if (deleteId) {
           setDeleteId(null);
+        } else if (mobileSidebarOpen) {
+          setMobileSidebarOpen(false);
         } else if (isInput) {
           (activeEl as HTMLElement).blur();
         }
         return;
       }
 
-      // New secret shortcut: 'n' when not typing in input
+      // New secret shortcut: 'n' when not typing in an input
       if (e.key.toLowerCase() === 'n' && !isInput && !isModalOpen && authStatus.authenticated) {
         e.preventDefault();
         setEditingSecret(null);
@@ -249,7 +266,7 @@ export const VaultApp: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, deleteId, filteredSecrets, selectedIndex, authStatus.authenticated]);
+  }, [isModalOpen, deleteId, filteredSecrets, selectedIndex, authStatus.authenticated, mobileSidebarOpen]);
 
   const handleSaveSecret = async (data: {
     id?: string;
@@ -306,12 +323,11 @@ export const VaultApp: React.FC = () => {
   // Loading state
   if (authStatus.loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="ambient-glow" />
-        <div className="relative z-10 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-          <span className="text-xs font-mono text-[var(--text-muted)] tracking-wider">
-            LOADING VAULT...
+      <div className="h-screen flex flex-col items-center justify-center bg-[var(--bg-app)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+          <span className="text-[11px] font-mono text-[var(--text-muted)] tracking-wider">
+            KEYSTASH VAULT...
           </span>
         </div>
       </div>
@@ -347,113 +363,92 @@ export const VaultApp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pb-16 relative overflow-hidden">
-      {/* Ambient background glow */}
-      <div className="ambient-glow" />
-
-      {/* Header */}
-      <Header
+    <div className="h-screen w-screen flex overflow-hidden bg-[var(--bg-app)]">
+      {/* Proton Pass style Left Navigation Sidebar */}
+      <Sidebar
         t={t}
         currentLocale={locale}
         onLocaleChange={handleLocaleChange}
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchInputRef={searchInputRef}
-        categories={categories}
+        categories={categoryCounts}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
-        onNewSecret={() => {
-          setEditingSecret(null);
-          setIsModalOpen(true);
-        }}
-        onLockVault={handleLockVault}
         totalCount={secrets.length}
+        onLockVault={handleLockVault}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      {/* Main Secret List Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 pt-6 relative z-10">
-        {loadingSecrets ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-          </div>
-        ) : filteredSecrets.length === 0 ? (
-          <div className="pro-card text-center py-16 px-6 rounded-2xl bg-[var(--bg-surface)]/80 backdrop-blur-md">
-            <div className="relative inline-flex items-center justify-center mb-4">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 opacity-20 blur-sm" />
-              <div className="relative w-12 h-12 rounded-xl bg-[var(--bg-surface-elevated)] flex items-center justify-center text-violet-400 border border-violet-500/30">
-                <Plus className="w-6 h-6" />
-              </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Vault Toolbar */}
+        <VaultToolbar
+          t={t}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchInputRef={searchInputRef}
+          selectedCategory={selectedCategory}
+          totalCount={secrets.length}
+          filteredCount={filteredSecrets.length}
+          onNewSecret={() => {
+            setEditingSecret(null);
+            setIsModalOpen(true);
+          }}
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        />
+
+        {/* Scrollable Secret List */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {loadingSecrets ? (
+            <div className="flex justify-center py-24">
+              <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
             </div>
-            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1 tracking-tight">
-              {t.noSecretsFound}
-            </h3>
-            <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto mb-6">
-              {t.noSecretsHint}
-            </p>
-            <button
-              onClick={() => {
-                setEditingSecret(null);
-                setIsModalOpen(true);
-              }}
-              className="btn-violet inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t.newSecret}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {filteredSecrets.map((secret, index) => (
-              <SecretCard
-                key={secret.id}
-                secret={secret}
-                t={t}
-                isSelected={selectedIndex === index}
-                onCopy={handleCopy}
-                isCopied={copiedId === secret.id}
-                onEdit={(s) => {
-                  setEditingSecret(s);
+          ) : filteredSecrets.length === 0 ? (
+            /* Seamless canvas empty state — zero giant cards */
+            <div className="flex flex-col items-center justify-center py-24 px-4 text-center select-none">
+              <div className="w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-violet-400 mb-3">
+                <span className="text-sm font-bold">◇</span>
+              </div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-tight mb-1">
+                {t.emptyTitle}
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] max-w-xs mb-4">
+                {t.emptySubtitle}
+              </p>
+              <button
+                onClick={() => {
+                  setEditingSecret(null);
                   setIsModalOpen(true);
                 }}
-                onDelete={(id) => setDeleteId(id)}
-              />
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Raycast-style Tactical Shortcuts Footer */}
-      <footer className="fixed bottom-0 inset-x-0 bg-[var(--bg-app)]/85 backdrop-blur-xl border-t border-[var(--border-subtle)] py-2 px-4 z-20">
-        <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-4 text-[11px] text-[var(--text-muted)] flex-wrap">
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="kbd-key">/</kbd>
-            <span className="text-[var(--text-secondary)]">{t.searchPlaceholder.split('...')[0]}</span>
-          </span>
-          <span className="text-[var(--border-subtle)]">•</span>
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="kbd-key">N</kbd>
-            <span className="text-[var(--text-secondary)]">{t.newSecret}</span>
-          </span>
-          <span className="text-[var(--border-subtle)]">•</span>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="kbd-key">↑</kbd>
-            <kbd className="kbd-key">↓</kbd>
-            <span className="text-[var(--text-secondary)] ml-0.5">Select</span>
-          </span>
-          <span className="text-[var(--border-subtle)]">•</span>
-          <span className="inline-flex items-center gap-1">
-            <kbd className="kbd-key">C</kbd>
-            <span className="text-[var(--text-secondary)] ml-0.5">{t.copy}</span>
-          </span>
-          <span className="text-[var(--border-subtle)]">•</span>
-          <span className="inline-flex items-center gap-1.5">
-            <kbd className="kbd-key">Esc</kbd>
-            <span className="text-[var(--text-secondary)]">{t.cancel}</span>
-          </span>
+                className="btn-primary"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t.addSecret}</span>
+              </button>
+            </div>
+          ) : (
+            /* Clean scannable rows */
+            <div className="divide-y divide-[var(--border-subtle)]">
+              {filteredSecrets.map((secret, index) => (
+                <SecretRow
+                  key={secret.id}
+                  secret={secret}
+                  t={t}
+                  isSelected={selectedIndex === index}
+                  onCopy={handleCopy}
+                  isCopied={copiedId === secret.id}
+                  onEdit={(s) => {
+                    setEditingSecret(s);
+                    setIsModalOpen(true);
+                  }}
+                  onDelete={(id) => setDeleteId(id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      </footer>
+      </div>
 
       {/* Secret Create / Edit Modal */}
       <SecretModal
@@ -462,36 +457,34 @@ export const VaultApp: React.FC = () => {
         onSave={handleSaveSecret}
         editingSecret={editingSecret}
         t={t}
-        existingCategories={categories}
+        existingCategories={rawCategories}
       />
 
       {/* Delete Confirmation Modal */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="pro-card w-full max-w-sm rounded-2xl shadow-2xl p-6 bg-[var(--bg-surface)]/95 border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-3 text-red-400">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
-                <ShieldAlert className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-xl shadow-2xl p-5 bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-100">
+            <div className="flex items-center gap-3 mb-2.5 text-red-400">
+              <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                <ShieldAlert className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                  {t.confirmDeleteTitle}
-                </h3>
-              </div>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                {t.confirmDeleteTitle}
+              </h3>
             </div>
-            <p className="text-xs text-[var(--text-secondary)] mb-6 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] mb-5 leading-relaxed">
               {t.confirmDeleteMessage}
             </p>
-            <div className="flex items-center justify-end gap-2.5">
+            <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-3.5 py-1.5 rounded-xl border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>
               <button
                 onClick={() => handleDeleteSecret(deleteId)}
-                className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 {t.delete}
               </button>

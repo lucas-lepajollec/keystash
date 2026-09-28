@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import type { Translations } from '@/lib/i18n';
-import type { SecretData } from './SecretCard';
+import type { SecretData } from './SecretRow';
 import { X, Sparkles, KeyRound } from 'lucide-react';
 
 interface SecretModalProps {
@@ -193,10 +193,10 @@ const ModalForm: React.FC<FormProps> = ({
                 type="button"
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer ${
+                className={`px-2 py-0.5 text-xs rounded-md border transition-colors cursor-pointer ${
                   category === cat
-                    ? 'bg-violet-500/15 text-violet-400 dark:text-violet-300 border-violet-500/40 font-semibold shadow-[0_0_10px_rgba(139,92,246,0.15)]'
-                    : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:border-[var(--border-active)]'
+                    ? 'bg-violet-500/15 text-violet-300 border-violet-500/30 font-semibold'
+                    : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {cat}
@@ -215,7 +215,7 @@ const ModalForm: React.FC<FormProps> = ({
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder={t.fieldTagsPlaceholder}
-            className="w-full px-3.5 py-2.5 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+            className="w-full px-3 py-2 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
           />
         </div>
 
@@ -229,23 +229,23 @@ const ModalForm: React.FC<FormProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t.fieldNotesPlaceholder}
-            className="w-full px-3.5 py-2.5 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)] resize-none"
+            className="w-full px-3 py-2 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)] resize-none"
           />
         </div>
 
         {/* Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium rounded-xl border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
           >
             {t.cancel}
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="btn-violet px-4 py-2 text-xs font-semibold disabled:opacity-50 cursor-pointer"
+            className="btn-primary"
           >
             {loading ? t.saving : t.save}
           </button>

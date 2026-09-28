@@ -51,6 +51,14 @@ export interface Translations {
   themeToggle: string;
   language: string;
   totalSecrets: string;
+  vault: string;
+  categories: string;
+  actions: string;
+  updated: string;
+  emptyTitle: string;
+  emptySubtitle: string;
+  addSecret: string;
+  searchHint: string;
 }
 
 export const translations: Record<Locale, Translations> = {
@@ -105,6 +113,14 @@ export const translations: Record<Locale, Translations> = {
     themeToggle: 'Toggle theme',
     language: 'Language',
     totalSecrets: 'secrets stored',
+    vault: 'Vault',
+    categories: 'Categories',
+    actions: 'Actions',
+    updated: 'Updated',
+    emptyTitle: 'Your vault is empty',
+    emptySubtitle: 'Store your first API key or token to get started.',
+    addSecret: 'Add secret',
+    searchHint: 'Search secrets…',
   },
   fr: {
     appName: 'KeyStash',
@@ -157,6 +173,14 @@ export const translations: Record<Locale, Translations> = {
     themeToggle: 'Changer de thème',
     language: 'Langue',
     totalSecrets: 'secrets enregistrés',
+    vault: 'Coffre',
+    categories: 'Catégories',
+    actions: 'Actions',
+    updated: 'Modifié',
+    emptyTitle: 'Votre coffre est vide',
+    emptySubtitle: 'Enregistrez votre première clé API ou token pour commencer.',
+    addSecret: 'Ajouter un secret',
+    searchHint: 'Rechercher des secrets…',
   },
   es: {
     appName: 'KeyStash',
@@ -203,12 +227,20 @@ export const translations: Record<Locale, Translations> = {
     passwordMismatch: 'Las contraseñas no coinciden.',
     passwordTooShort: 'La contraseña maestra debe tener al menos 8 caracteres.',
     invalidPassword: 'Contraseña maestra incorrecta.',
-    rateLimited: 'Demasiados intentos fallidos. Espere 15 minutos.',
+    rateLimited: 'Demasiados intentos fallidos. Espere 15 minutes.',
     vaultLocked: 'Cofre bloqueado. Por favor autentíquese.',
     shortcutsHint: 'Teclado: / para buscar • N para crear • Esc para cerrar • Flechas para navegar • Enter para copiar',
     themeToggle: 'Cambiar tema',
     language: 'Idioma',
     totalSecrets: 'secretos guardados',
+    vault: 'Cofre',
+    categories: 'Categorías',
+    actions: 'Acciones',
+    updated: 'Actualizado',
+    emptyTitle: 'Su cofre está vacío',
+    emptySubtitle: 'Guarde su primera clave API o token para comenzar.',
+    addSecret: 'Agregar secreto',
+    searchHint: 'Buscar secretos…',
   },
   de: {
     appName: 'KeyStash',
@@ -261,5 +293,14 @@ export const translations: Record<Locale, Translations> = {
     themeToggle: 'Design wechseln',
     language: 'Sprache',
     totalSecrets: 'gespeicherte Secrets',
+    vault: 'Tresor',
+    categories: 'Kategorien',
+    actions: 'Aktionen',
+    updated: 'Aktualisiert',
+    emptyTitle: 'Ihr Tresor ist leer',
+    emptySubtitle: 'Speichern Sie Ihren ersten API-Schlüssel oder Ihr erstes Token.',
+    addSecret: 'Secret hinzufügen',
+    searchHint: 'Secrets suchen…',
   },
 };
+
