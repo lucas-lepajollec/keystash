@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react';
 import { translations, type Locale, type Translations } from '@/lib/i18n';
-import { Sidebar } from './Sidebar';
-import { VaultToolbar } from './VaultToolbar';
 import { SecretRow, type SecretData } from './SecretRow';
 import { SecretModal } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
-import { ShieldAlert, Plus } from 'lucide-react';
+import { Plus, Search, Globe, Sun, Moon, Lock, ShieldAlert } from 'lucide-react';
 
 function subscribeToStorage(callback: () => void) {
   window.addEventListener('storage', callback);
@@ -55,7 +53,6 @@ export const VaultApp: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,7 +153,7 @@ export const VaultApp: React.FC = () => {
     }
   };
 
-  // Filter secrets
+  // Filter secrets based on search & category
   const filteredSecrets = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return secrets.filter((s) => {
@@ -175,28 +172,25 @@ export const VaultApp: React.FC = () => {
     });
   }, [secrets, searchQuery, selectedCategory]);
 
-  // Extract all categories
-  const rawCategories = useMemo(() => {
-    const set = new Set<string>();
-    secrets.forEach((s) => {
-      if (s.category && s.category !== 'General') set.add(s.category);
-    });
-    ['AI', 'Development', 'Infrastructure'].forEach((c) => set.add(c));
-    return Array.from(set);
-  }, [secrets]);
-
-  // Categories with counts for Sidebar
+  // Extract all categories with real counts
   const categoryCounts = useMemo(() => {
-    const map: Record<string, number> = {};
+    const counts: Record<string, number> = {};
     secrets.forEach((s) => {
       const cat = s.category || 'General';
-      map[cat] = (map[cat] || 0) + 1;
+      counts[cat] = (counts[cat] || 0) + 1;
     });
-    return rawCategories.map((c) => ({
-      name: c,
-      count: map[c] || 0,
-    }));
-  }, [rawCategories, secrets]);
+
+    const categoryList = Object.keys(counts).sort((a, b) => {
+      if (a === 'AI') return -1;
+      if (b === 'AI') return 1;
+      return a.localeCompare(b);
+    });
+
+    return [
+      { name: 'All', count: secrets.length },
+      ...categoryList.map((c) => ({ name: c, count: counts[c] || 0 })),
+    ];
+  }, [secrets]);
 
   // Copy secret with instant feedback
   const handleCopy = (secret: SecretData) => {
@@ -208,7 +202,7 @@ export const VaultApp: React.FC = () => {
     }, 2000);
   };
 
-  // Global Keyboard shortcuts (Raycast interaction model)
+  // Global Keyboard shortcuts (Raycast model)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -224,14 +218,12 @@ export const VaultApp: React.FC = () => {
         return;
       }
 
-      // Close modal, sidebar, or escape search
+      // Close modal / sheet / clear search
       if (e.key === 'Escape') {
         if (isModalOpen) {
           setIsModalOpen(false);
         } else if (deleteId) {
           setDeleteId(null);
-        } else if (mobileSidebarOpen) {
-          setMobileSidebarOpen(false);
         } else if (isInput) {
           (activeEl as HTMLElement).blur();
         }
@@ -266,7 +258,7 @@ export const VaultApp: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, deleteId, filteredSecrets, selectedIndex, authStatus.authenticated, mobileSidebarOpen]);
+  }, [isModalOpen, deleteId, filteredSecrets, selectedIndex, authStatus.authenticated]);
 
   const handleSaveSecret = async (data: {
     id?: string;
@@ -323,11 +315,11 @@ export const VaultApp: React.FC = () => {
   // Loading state
   if (authStatus.loading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[var(--bg-app)]">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-app)]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
           <span className="text-[11px] font-mono text-[var(--text-muted)] tracking-wider">
-            KEYSTASH VAULT...
+            KEYSTASH...
           </span>
         </div>
       </div>
@@ -363,49 +355,119 @@ export const VaultApp: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-[var(--bg-app)]">
-      {/* Proton Pass style Left Navigation Sidebar */}
-      <Sidebar
-        t={t}
-        currentLocale={locale}
-        onLocaleChange={handleLocaleChange}
-        isDark={isDark}
-        onToggleTheme={handleToggleTheme}
-        categories={categoryCounts}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        totalCount={secrets.length}
-        onLockVault={handleLockVault}
-        mobileOpen={mobileSidebarOpen}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
-      />
+    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] antialiased">
+      {/* Centered Main Workspace (approx 960px) */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        {/* Top Header Row */}
+        <header className="flex items-center justify-between gap-4 pb-6">
+          {/* Brand */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-violet-400 font-bold text-base select-none">◇</span>
+            <span className="font-semibold text-base tracking-tight text-[var(--text-primary)]">
+              {t.appName}
+            </span>
+            <span className="text-[11px] font-mono text-[var(--text-muted)] px-2 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+              {secrets.length} {t.totalSecrets}
+            </span>
+          </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        {/* Top Vault Toolbar */}
-        <VaultToolbar
-          t={t}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchInputRef={searchInputRef}
-          selectedCategory={selectedCategory}
-          totalCount={secrets.length}
-          filteredCount={filteredSecrets.length}
-          onNewSecret={() => {
-            setEditingSecret(null);
-            setIsModalOpen(true);
-          }}
-          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-        />
+          {/* Right Toolbar Actions */}
+          <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 bg-[var(--bg-surface)]">
+              <Globe className="w-3.5 h-3.5 opacity-70" />
+              <select
+                value={locale}
+                onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+                className="bg-transparent border-none outline-none cursor-pointer uppercase font-mono font-medium text-[var(--text-primary)] text-xs"
+              >
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
+                <option value="es">ES</option>
+                <option value="de">DE</option>
+              </select>
+            </div>
 
-        {/* Scrollable Secret List */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* Theme Toggle */}
+            <button
+              onClick={handleToggleTheme}
+              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              title={t.themeToggle}
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-violet-400" />}
+            </button>
+
+            {/* Lock Button */}
+            <button
+              onClick={handleLockVault}
+              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-red-400 transition-colors cursor-pointer"
+              title={t.lockVault}
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Primary Action Button */}
+            <button
+              onClick={() => {
+                setEditingSecret(null);
+                setIsModalOpen(true);
+              }}
+              className="btn-primary ml-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t.newSecret}</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Raycast-style Command Search Bar */}
+        <div className="relative mb-3">
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-3 pointer-events-none" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t.searchPlaceholder}
+            className="w-full pl-10 pr-20 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-sm outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+          />
+          <div className="absolute right-3 top-2.5 flex items-center gap-1 pointer-events-none">
+            <kbd className="kbd-key">/</kbd>
+            <kbd className="kbd-key hidden sm:inline-flex">Ctrl K</kbd>
+          </div>
+        </div>
+
+        {/* Compact Category Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-4 pt-1">
+          {categoryCounts.map((cat) => {
+            const isSelected = selectedCategory === cat.name;
+            return (
+              <button
+                key={cat.name}
+                onClick={() => setSelectedCategory(cat.name)}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? 'bg-violet-500/15 text-violet-300 border border-violet-500/30 font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
+                }`}
+              >
+                <span>{cat.name === 'All' ? t.allCategories : cat.name}</span>
+                <span className="text-[10px] font-mono opacity-70">
+                  {cat.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main Secrets List (Clean Rows, Zero Outer Card) */}
+        <main className="mt-2">
           {loadingSecrets ? (
             <div className="flex justify-center py-24">
               <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
             </div>
           ) : filteredSecrets.length === 0 ? (
-            /* Seamless canvas empty state — zero giant cards */
+            /* Seamless empty state on canvas */
             <div className="flex flex-col items-center justify-center py-24 px-4 text-center select-none">
               <div className="w-10 h-10 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-violet-400 mb-3">
                 <span className="text-sm font-bold">◇</span>
@@ -428,8 +490,8 @@ export const VaultApp: React.FC = () => {
               </button>
             </div>
           ) : (
-            /* Clean scannable rows */
-            <div className="divide-y divide-[var(--border-subtle)]">
+            /* Clean Rows List */
+            <div className="divide-y divide-[var(--border-subtle)] border-t border-[var(--border-subtle)]">
               {filteredSecrets.map((secret, index) => (
                 <SecretRow
                   key={secret.id}
@@ -447,23 +509,23 @@ export const VaultApp: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
 
-      {/* Secret Create / Edit Modal */}
+      {/* Right Slide-over Sheet for Secret Create / Edit */}
       <SecretModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveSecret}
         editingSecret={editingSecret}
         t={t}
-        existingCategories={rawCategories}
+        existingCategories={categoryCounts.map((c) => c.name).filter((c) => c !== 'All')}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Dialog */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-xl shadow-2xl p-5 bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-100">
+          <div className="w-full max-w-sm rounded-xl shadow-2xl p-5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-100">
             <div className="flex items-center gap-3 mb-2.5 text-red-400">
               <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
                 <ShieldAlert className="w-4 h-4" />
@@ -478,7 +540,7 @@ export const VaultApp: React.FC = () => {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors cursor-pointer"
               >
                 {t.cancel}
               </button>

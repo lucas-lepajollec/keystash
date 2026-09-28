@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Translations } from '@/lib/i18n';
 import type { SecretData } from './SecretRow';
 import { X, Sparkles, KeyRound } from 'lucide-react';
@@ -21,7 +21,7 @@ interface SecretModalProps {
   existingCategories: string[];
 }
 
-const PRESET_CATEGORIES = ['AI', 'Development', 'Infrastructure', 'Finance', 'Personal'];
+const PRESET_CATEGORIES = ['AI', 'Development', 'Infrastructure', 'Media', 'Finance', 'Personal'];
 
 interface FormProps {
   editingSecret?: SecretData | null;
@@ -31,7 +31,7 @@ interface FormProps {
   onSave: SecretModalProps['onSave'];
 }
 
-const ModalForm: React.FC<FormProps> = ({
+const SheetForm: React.FC<FormProps> = ({
   editingSecret,
   t,
   existingCategories,
@@ -47,6 +47,10 @@ const ModalForm: React.FC<FormProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
 
   const handleGenerateSecret = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~';
@@ -100,62 +104,61 @@ const ModalForm: React.FC<FormProps> = ({
 
   return (
     <div
-      className="pro-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xl bg-[var(--bg-surface)]/95 border border-[var(--border-subtle)]"
+      className="fixed inset-y-0 right-0 z-50 w-full sm:max-w-md bg-[var(--bg-app)] border-l border-[var(--border-subtle)] shadow-2xl flex flex-col animate-in slide-in-from-right duration-150"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4.5 border-b border-[var(--border-subtle)]">
+      {/* Sheet Header */}
+      <div className="flex items-center justify-between px-6 py-4.5 border-b border-[var(--border-subtle)] shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-violet-400" />
+          <span className="text-violet-400 font-bold text-sm">◇</span>
           <h2 className="text-sm font-semibold tracking-tight text-[var(--text-primary)]">
             {editingSecret ? t.modalEditTitle : t.modalNewTitle}
           </h2>
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      {/* Sheet Form */}
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
         {error && (
-          <div className="p-3 rounded-xl text-xs bg-red-500/10 border border-red-500/20 text-red-400">
+          <div className="p-3 rounded-lg text-xs bg-red-500/10 border border-red-500/20 text-red-400">
             {error}
           </div>
         )}
 
         {/* Name */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             {t.fieldTitle} *
           </label>
           <input
             ref={nameInputRef}
             type="text"
             required
-            autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t.fieldNamePlaceholder}
-            className="w-full px-3.5 py-2.5 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+            className="w-full px-3 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-md text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
           />
         </div>
 
         {/* Secret Value */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1">
             <label className="text-xs font-medium text-[var(--text-secondary)]">
               {t.fieldSecret} {editingSecret ? '(leave empty to keep current)' : '*'}
             </label>
             <button
               type="button"
               onClick={handleGenerateSecret}
-              className="flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 font-medium cursor-pointer transition-colors"
+              className="flex items-center gap-1 text-[11px] text-violet-400 hover:text-violet-300 font-medium cursor-pointer transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3 h-3" />
               <span>{t.generateToken}</span>
             </button>
           </div>
@@ -168,15 +171,15 @@ const ModalForm: React.FC<FormProps> = ({
               placeholder={
                 editingSecret ? '•••••••••••••••• (unchanged)' : t.fieldSecretPlaceholder
               }
-              className="w-full pl-3.5 pr-10 py-2.5 font-mono bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+              className="w-full pl-3 pr-8 py-2 font-mono bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-md text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
             />
-            <KeyRound className="w-4 h-4 text-[var(--text-muted)] absolute right-3.5 top-3" />
+            <KeyRound className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-2.5 top-2.5" />
           </div>
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             {t.fieldCategory}
           </label>
           <input
@@ -184,7 +187,7 @@ const ModalForm: React.FC<FormProps> = ({
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder={t.fieldCategoryPlaceholder}
-            className="w-full px-3.5 py-2 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500/80 focus:ring-2 focus:ring-violet-500/20 rounded-xl text-sm outline-none transition-all placeholder:text-[var(--text-muted)] text-[var(--text-primary)] mb-2.5"
+            className="w-full px-3 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-md text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)] mb-2"
           />
           {/* Quick category chips */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -193,10 +196,10 @@ const ModalForm: React.FC<FormProps> = ({
                 type="button"
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`px-2 py-0.5 text-xs rounded-md border transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 text-xs rounded border transition-colors cursor-pointer ${
                   category === cat
                     ? 'bg-violet-500/15 text-violet-300 border-violet-500/30 font-semibold'
-                    : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {cat}
@@ -207,7 +210,7 @@ const ModalForm: React.FC<FormProps> = ({
 
         {/* Tags */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             {t.fieldTags}
           </label>
           <input
@@ -215,30 +218,30 @@ const ModalForm: React.FC<FormProps> = ({
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder={t.fieldTagsPlaceholder}
-            className="w-full px-3 py-2 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
+            className="w-full px-3 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-md text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
           />
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
             {t.fieldNotes}
           </label>
           <textarea
-            rows={2}
+            rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t.fieldNotesPlaceholder}
-            className="w-full px-3 py-2 bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)] resize-none"
+            className="w-full px-3 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-md text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)] resize-none"
           />
         </div>
 
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--border-subtle)]">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors cursor-pointer"
           >
             {t.cancel}
           </button>
@@ -266,8 +269,13 @@ export const SecretModal: React.FC<SecretModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-      <ModalForm
+    <div className="fixed inset-0 z-50 flex">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+      <SheetForm
         key={editingSecret?.id || 'new'}
         editingSecret={editingSecret}
         t={t}

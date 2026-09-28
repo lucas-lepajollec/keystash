@@ -269,3 +269,75 @@ export function getCategories(): string[] {
   const rows = stmt.all() as Array<{ category: string }>;
   return rows.map((r) => r.category);
 }
+
+export function seedDefaultSecrets(encryptFn: (val: string) => string, maskFn: (val: string) => string): void {
+  const defaults = [
+    {
+      name: 'Anthropic',
+      category: 'AI',
+      tags: ['production', 'claude-3-7'],
+      notes: 'API key with Claude 3.7 Sonnet access',
+      secret: 'sk-ant-api03-kJ89mQxL2491ZabCDefGhIJkLmnOPQRstuvWXyz0123456789',
+    },
+    {
+      name: 'OpenAI',
+      category: 'AI',
+      tags: ['gpt-4o', 'embeddings'],
+      notes: 'Project API key for agent workflows',
+      secret: 'sk-proj-aB91cD82eF73gH64iJ55kL46mN37oP28qR19sT00uV99wX88yZ77',
+    },
+    {
+      name: 'GitHub',
+      category: 'Development',
+      tags: ['pat', 'workflow'],
+      notes: 'Personal access token for CLI & CI pipelines',
+      secret: 'ghp_4kL89mNoPqRsTuVwXyZ0123456789AbCdEfGh',
+    },
+    {
+      name: 'Forgejo',
+      category: 'Development',
+      tags: ['self-hosted', 'git'],
+      notes: 'Self-hosted git server access token',
+      secret: 'fgo_9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b',
+    },
+    {
+      name: 'Cloudflare',
+      category: 'Infrastructure',
+      tags: ['dns', 'zones'],
+      notes: 'Global API token with DNS Edit Zone permissions',
+      secret: 'clf_d9e8f7a6b5c4d3e2f1a0987654321fedcba09876',
+    },
+    {
+      name: 'Resend',
+      category: 'Development',
+      tags: ['email', 'transactional'],
+      notes: 'Production email delivery API key',
+      secret: 're_12345678_abcdefghijklmnopqrstuvwxyz',
+    },
+    {
+      name: 'Vercel',
+      category: 'Infrastructure',
+      tags: ['deployments', 'cli'],
+      notes: 'Token for automated preview deployments',
+      secret: 'vcl_live_token_99x88w77v66u55t44s33r22q11p',
+    },
+    {
+      name: 'TMDB',
+      category: 'Media',
+      tags: ['metadata', 'read-only'],
+      notes: 'The Movie Database API read access v4 token',
+      secret: 'tmdb_auth_v4_eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmMTkyMGVl',
+    },
+  ];
+
+  for (const item of defaults) {
+    createSecret({
+      name: item.name,
+      category: item.category,
+      tags: item.tags,
+      notes: item.notes,
+      encrypted_value: encryptFn(item.secret),
+      masked_preview: maskFn(item.secret),
+    });
+  }
+}

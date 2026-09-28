@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSecrets, createSecret, isSessionValid } from '@/lib/db';
+import { getAllSecrets, createSecret, isSessionValid, seedDefaultSecrets, getConfig, setConfig } from '@/lib/db';
 import { COOKIE_NAME, hashSessionToken } from '@/lib/auth';
 import { encryptSecret, decryptSecret, generateMaskedPreview } from '@/lib/crypto';
 
@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const rawSecrets = getAllSecrets();
+    let rawSecrets = getAllSecrets();
+    if (rawSecrets.length === 0 && !getConfig('vault_seeded')) {
+      seedDefaultSecrets(encryptSecret, generateMaskedPreview);
+      setConfig('vault_seeded', '1');
+      rawSecrets = getAllSecrets();
+    }
     const secrets = rawSecrets.map((s) => {
       let plainValue = '';
       try {
