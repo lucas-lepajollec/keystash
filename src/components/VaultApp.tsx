@@ -7,6 +7,7 @@ import { SecretModal } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
 import { Plus, Search, Globe, Sun, Moon, Lock, ShieldAlert } from 'lucide-react';
+import { copyToClipboard } from '@/lib/clipboard';
 
 function subscribeToStorage(callback: () => void) {
   window.addEventListener('storage', callback);
@@ -192,14 +193,16 @@ export const VaultApp: React.FC = () => {
     ];
   }, [secrets]);
 
-  // Copy secret with instant feedback
-  const handleCopy = (secret: SecretData) => {
+  // Copy secret with instant feedback (supports HTTPS, localhost, and HTTP LAN contexts)
+  const handleCopy = async (secret: SecretData) => {
     if (!secret.value) return;
-    navigator.clipboard.writeText(secret.value);
-    setCopiedId(secret.id);
-    setTimeout(() => {
-      setCopiedId((prev) => (prev === secret.id ? null : prev));
-    }, 2000);
+    const copied = await copyToClipboard(secret.value);
+    if (copied) {
+      setCopiedId(secret.id);
+      setTimeout(() => {
+        setCopiedId((prev) => (prev === secret.id ? null : prev));
+      }, 2000);
+    }
   };
 
   // Global Keyboard shortcuts (Raycast model)
