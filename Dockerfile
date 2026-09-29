@@ -31,7 +31,6 @@ RUN adduser --system --uid 1001 --ingroup nodejs nextjs
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/assets ./assets
 
 # Setup data directory permissions
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data /app/.next

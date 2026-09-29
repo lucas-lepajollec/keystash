@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSecrets, createSecret, isSessionValid, seedDefaultSecrets, getConfig, setConfig } from '@/lib/db';
+import { getAllSecrets, createSecret, isSessionValid } from '@/lib/db';
 import { COOKIE_NAME, hashSessionToken } from '@/lib/auth';
-import { encryptSecret, decryptSecret, generateMaskedPreview } from '@/lib/crypto';
+import { decryptSecret, encryptSecret, generateMaskedPreview } from '@/lib/crypto';
 
 function checkAuth(request: NextRequest): boolean {
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -15,13 +15,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    let rawSecrets = getAllSecrets();
-    if (process.env.KEYSTASH_SEED_DEMO === 'true' && rawSecrets.length === 0 && !getConfig('vault_seeded')) {
-      seedDefaultSecrets(encryptSecret, generateMaskedPreview);
-      setConfig('vault_seeded', '1');
-      rawSecrets = getAllSecrets();
-    }
-    const secrets = rawSecrets.map((s) => {
+    // A fresh vault is genuinely empty. It must never fabricate placeholder
+    // entries: a user who opens the app and sees secrets would reasonably
+    // believe they are their own.
+    const secrets = getAllSecrets().map((s) => {
       let plainValue = '';
       try {
         plainValue = decryptSecret(s.encrypted_value);

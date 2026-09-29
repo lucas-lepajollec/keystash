@@ -15,6 +15,17 @@ interface RateLimitBucket {
 
 const loginBuckets = new Map<string, RateLimitBucket>();
 
+/**
+ * Buckets are keyed by client IP, so an unauthenticated caller could grow this
+ * map without bound. Evict expired entries whenever a new bucket is opened.
+ */
+function evictExpiredBuckets(now: number): void {
+  if (loginBuckets.size < 64) return;
+  for (const [ip, bucket] of loginBuckets) {
+    if (bucket.resetAt <= now) loginBuckets.delete(ip);
+  }
+}
+
 export async function hashPassword(password: string): Promise<string> {
   return argon2Hash(password, {
     memoryCost: 19456, // 19 MiB
@@ -53,6 +64,7 @@ export function isLoginRateLimited(request: NextRequest): boolean {
   const bucket = loginBuckets.get(ip);
 
   if (!bucket || bucket.resetAt <= now) {
+    evictExpiredBuckets(now);
     loginBuckets.set(ip, { attempts: 0, resetAt: now + LOGIN_WINDOW_MS });
     return false;
   }
@@ -66,6 +78,7 @@ export function recordLoginFailure(request: NextRequest): void {
   const bucket = loginBuckets.get(ip);
 
   if (!bucket || bucket.resetAt <= now) {
+    evictExpiredBuckets(now);
     loginBuckets.set(ip, { attempts: 1, resetAt: now + LOGIN_WINDOW_MS });
     return;
   }

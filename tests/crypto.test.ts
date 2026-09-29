@@ -15,7 +15,7 @@ describe('Crypto Module', () => {
   });
 
   it('should encrypt and decrypt a secret string correctly with AES-256-GCM', () => {
-    const original = 'sk-ant-api03-test-1234567890abcdefghijklmnopqrstuvwxyz';
+    const original = 'not-a-real-key-0000000000000000000000';
     const encrypted = encryptSecret(original, testKey);
 
     expect(encrypted).toContain(':');

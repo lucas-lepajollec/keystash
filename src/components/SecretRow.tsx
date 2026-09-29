@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import type { Translations } from '@/lib/i18n';
-import { Copy, Check, Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Check, Copy, Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { fill, type Translations } from '@/lib/i18n';
 
 export interface SecretData {
   id: string;
@@ -23,8 +23,15 @@ interface SecretRowProps {
   onCopy: (secret: SecretData) => void;
   isCopied: boolean;
   onEdit: (secret: SecretData) => void;
-  onDelete: (id: string) => void;
+  onDelete: (secret: SecretData) => void;
+  /** Vault-wide reveal; overrides the row's own toggle. */
+  revealAll: boolean;
+  onRevealIndividually: () => void;
+  /** Vault-wide reveal is active, so the value column claims more room. */
+  expanded: boolean;
 }
+
+const REVEAL_TIMEOUT_MS = 15_000;
 
 export const SecretRow: React.FC<SecretRowProps> = ({
   secret,
@@ -34,137 +41,191 @@ export const SecretRow: React.FC<SecretRowProps> = ({
   isCopied,
   onEdit,
   onDelete,
+  revealAll,
+  onRevealIndividually,
+  expanded,
 }) => {
-  const [revealed, setRevealed] = useState(false);
+  const [ownRevealed, setOwnRevealed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const revealed = revealAll || ownRevealed;
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handlePointerDown(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
     }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false);
+    }
     if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handlePointerDown);
+      document.addEventListener('keydown', handleKey);
+      return () => {
+        document.removeEventListener('mousedown', handlePointerDown);
+        document.removeEventListener('keydown', handleKey);
+      };
     }
   }, [menuOpen]);
 
+  // A revealed secret must not stay on screen indefinitely.
+  useEffect(() => {
+    if (!revealed) return;
+    revealTimer.current = setTimeout(() => setOwnRevealed(false), REVEAL_TIMEOUT_MS);
+    return () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    };
+  }, [revealed]);
+
+  // The vault-wide reveal owns its own timer; the row timer must not touch it.
+  const toggleReveal = useCallback(() => {
+    if (revealAll) {
+      onRevealIndividually();
+      return;
+    }
+    setOwnRevealed((v) => !v);
+  }, [revealAll, onRevealIndividually]);
+
   return (
-    <div
-      className={`group relative flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-4 py-3 border-b border-[var(--border-subtle)] transition-colors ${
+    <li
+      data-selected={isSelected || undefined}
+      className={`group relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 transition-colors duration-100 sm:grid sm:gap-x-4 ${
+        expanded
+          ? 'sm:grid-cols-[minmax(0,1fr)_minmax(0,24rem)_auto]'
+          : 'sm:grid-cols-[minmax(0,1fr)_15rem_auto]'
+      } ${
         isSelected
-          ? 'bg-violet-500/[0.07]'
-          : 'hover:bg-white/[0.02]'
+          ? 'bg-accent-soft'
+          : 'hover:bg-sunken'
       }`}
     >
-      {/* Subtle selection marker */}
-      {isSelected && (
-        <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-[#7C3AED] rounded-r" />
-      )}
+      {/* Selection marker: colour plus a shape cue, never colour alone */}
+      <span
+        aria-hidden="true"
+        className={`absolute inset-y-1 left-0 w-[2px] rounded-r-full transition-all duration-150 ${
+          isSelected ? 'bg-accent' : 'bg-transparent'
+        }`}
+      />
 
-      {/* Left: Service name, Category, Tags, Notes */}
-      <div className="flex-1 min-w-0 pr-3 mb-2 sm:mb-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-tight">
+      {/* Identity — full width on narrow screens, flexible on wide ones */}
+      <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-[13px] font-medium leading-5 text-ink">
             {secret.name}
           </span>
-          <span className="text-xs text-[var(--text-secondary)] font-medium">
-            · {secret.category}
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.071em] text-ink-3">
+            {secret.category}
           </span>
-          {secret.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20"
-            >
-              #{tag}
-            </span>
-          ))}
         </div>
 
         {secret.notes && (
-          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5 max-w-md">
-            {secret.notes}
+          <p className="truncate text-[11px] leading-4 text-ink-3">{secret.notes}</p>
+        )}
+
+        {secret.tags.length > 0 && (
+          <p className="truncate text-[11px] leading-4 text-ink-3">
+            {secret.tags.map((tag) => `#${tag}`).join('  ')}
           </p>
         )}
       </div>
 
-      {/* Middle: Masked secret pill */}
-      <div className="flex items-center gap-1.5 shrink-0 my-1 sm:my-0 sm:mx-4">
-        <div className="px-2.5 py-1 rounded bg-black/40 dark:bg-[#050608] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] select-all truncate max-w-[220px] sm:max-w-[280px]">
-          {revealed ? secret.value : secret.masked_preview}
-        </div>
-        <button
-          onClick={() => setRevealed(!revealed)}
-          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-elevated)] transition-colors cursor-pointer"
-          title={revealed ? t.hide : t.reveal}
+      {/* Value + reveal — fixed column so every pill lines up */}
+      <div className="flex min-w-0 items-center justify-end gap-1 sm:min-w-0">
+        <code
+          className={`min-w-0 rounded bg-inset px-2 py-1 text-right font-mono text-[11px] leading-4 text-ink-2 ring-hair select-all ${
+            expanded
+              ? 'break-all sm:w-full'
+              : 'truncate sm:w-[13rem]'
+          }`}
+          title={secret.value}
         >
-          {revealed ? <EyeOff className="w-3.5 h-3.5 text-violet-400" /> : <Eye className="w-3.5 h-3.5" />}
+          {revealed ? secret.value : secret.masked_preview}
+        </code>
+        <button
+          type="button"
+          onClick={toggleReveal}
+          className="btn-icon size-7 shrink-0"
+          title={revealed ? t.hide : t.reveal}
+          aria-label={fill(revealed ? t.hide : t.reveal, { name: secret.name })}
+          aria-pressed={revealed}
+        >
+          {revealed ? (
+            <EyeOff className="size-3.5" aria-hidden="true" />
+          ) : (
+            <Eye className="size-3.5" aria-hidden="true" />
+          )}
         </button>
       </div>
 
-      {/* Right: Primary Copy Button & Discreet Actions Menu */}
-      <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0">
-        {/* Primary Copy Action */}
+      {/* Actions — always reachable, never hover-only, so touch stays usable */}
+      <div className="ml-auto flex items-center justify-end gap-1 sm:ml-0">
         <button
+          type="button"
           onClick={() => onCopy(secret)}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium cursor-pointer transition-all active:scale-95 ${
+          className={`btn h-7 gap-1.5 px-2.5 text-[11px] ${
             isCopied
-              ? 'bg-emerald-600 text-white'
-              : 'bg-[var(--bg-surface)] hover:bg-[#7C3AED] text-[var(--text-primary)] hover:text-white border border-[var(--border-subtle)] hover:border-transparent'
+              ? 'bg-success-soft text-success'
+              : 'text-ink-2 hover:bg-accent-soft hover:text-accent-ink'
           }`}
-          title="Press Enter to copy"
+          aria-label={fill(t.copyAria, { name: secret.name })}
         >
           {isCopied ? (
-            <>
-              <Check className="w-3.5 h-3.5" />
-              <span>{t.copied}</span>
-            </>
+            <Check className="size-3.5" aria-hidden="true" />
           ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              <span>{t.copy}</span>
-            </>
+            <Copy className="size-3.5" aria-hidden="true" />
           )}
+          <span>{isCopied ? t.copied : t.copy}</span>
         </button>
 
-        {/* Discreet Overflow Menu */}
         <div className="relative" ref={menuRef}>
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="btn-icon size-7"
             title={t.actions}
+            aria-label={`${t.actions} — ${secret.name}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
           >
-            <MoreHorizontal className="w-4 h-4" />
+            <MoreHorizontal className="size-4" aria-hidden="true" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-36 bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] rounded-lg shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 duration-100">
+            <div
+              role="menu"
+              className="anim-fade-in absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-md bg-raised py-1 ring-hair-strong"
+            >
               <button
+                type="button"
+                role="menuitem"
                 onClick={() => {
                   setMenuOpen(false);
                   onEdit(secret);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] text-left cursor-pointer"
+                className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs text-ink-2 transition-colors hover:bg-sunken hover:text-ink"
               >
-                <Pencil className="w-3.5 h-3.5" />
-                <span>{t.edit}</span>
+                <Pencil className="size-3.5" aria-hidden="true" />
+                {t.edit}
               </button>
               <button
+                type="button"
+                role="menuitem"
                 onClick={() => {
                   setMenuOpen(false);
-                  onDelete(secret.id);
+                  onDelete(secret);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 text-left cursor-pointer"
+                className="flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs text-danger transition-colors hover:bg-danger-soft"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{t.delete}</span>
+                <Trash2 className="size-3.5" aria-hidden="true" />
+                {t.delete}
               </button>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </li>
   );
 };

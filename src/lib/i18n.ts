@@ -1,30 +1,65 @@
 export type Locale = 'en' | 'fr' | 'es' | 'de';
 
+export const LOCALES: Locale[] = ['en', 'fr', 'es', 'de'];
+
 export interface Translations {
   appName: string;
-  tagline: string;
+  vault: string;
+
+  /* Search */
   searchPlaceholder: string;
-  newSecret: string;
+  searchLabel: string;
+  clearSearch: string;
+
+  /* Categories */
   allCategories: string;
-  noSecretsFound: string;
-  noSecretsHint: string;
+  categoriesLabel: string;
+  sidebarLabel: string;
+  revealAll: string;
+  hideAll: string;
+  overviewTitle: string;
+  statSecrets: string;
+  statCategories: string;
+  statLastUpdate: string;
+  never: string;
+
+  /* Header actions */
+  newSecret: string;
+  lockVault: string;
+  themeToggle: string;
+  language: string;
+  totalSecrets: string;
+
+  /* List */
   copy: string;
   copied: string;
+  copyAria: string;
   reveal: string;
   hide: string;
+  revealAria: string;
+  actions: string;
   edit: string;
   delete: string;
-  confirmDeleteTitle: string;
-  confirmDeleteMessage: string;
-  cancel: string;
-  save: string;
-  saving: string;
+  deleteAria: string;
+  listLabel: string;
+  emptyTitle: string;
+  emptySubtitle: string;
+  addSecret: string;
+  noResultsTitle: string;
+  noResultsSubtitle: string;
+  loadingVault: string;
+  resultsCount: string;
+
+  /* Create / edit sheet */
   modalNewTitle: string;
   modalEditTitle: string;
+  closeSheet: string;
   fieldTitle: string;
   fieldNamePlaceholder: string;
   fieldSecret: string;
   fieldSecretPlaceholder: string;
+  fieldSecretUnchanged: string;
+  fieldSecretKeepHint: string;
   fieldCategory: string;
   fieldCategoryPlaceholder: string;
   fieldTags: string;
@@ -32,275 +67,405 @@ export interface Translations {
   fieldNotes: string;
   fieldNotesPlaceholder: string;
   generateToken: string;
-  lockVault: string;
+  save: string;
+  saving: string;
+  cancel: string;
+
+  /* Delete confirmation */
+  confirmDeleteTitle: string;
+  confirmDeleteMessage: string;
+
+  /* Setup */
   setupTitle: string;
   setupSubtitle: string;
-  loginTitle: string;
-  loginSubtitle: string;
+  setupButton: string;
   masterPasswordLabel: string;
   confirmPasswordLabel: string;
   masterPasswordPlaceholder: string;
-  setupButton: string;
+  passwordPlaceholder: string;
+
+  /* Login */
+  loginTitle: string;
+  loginSubtitle: string;
   loginButton: string;
+
+  /* Errors */
+  fieldRequired: string;
   passwordMismatch: string;
   passwordTooShort: string;
   invalidPassword: string;
   rateLimited: string;
-  vaultLocked: string;
-  shortcutsHint: string;
-  themeToggle: string;
-  language: string;
-  totalSecrets: string;
-  vault: string;
-  categories: string;
-  actions: string;
-  updated: string;
-  emptyTitle: string;
-  emptySubtitle: string;
-  addSecret: string;
-  searchHint: string;
+  connectionError: string;
+  setupFailed: string;
+  saveFailed: string;
+  loading: string;
 }
 
 export const translations: Record<Locale, Translations> = {
   en: {
     appName: 'KeyStash',
-    tagline: 'Minimalist secret & token vault',
-    searchPlaceholder: 'Search secrets, categories, tags, or notes… ( / or Ctrl+K )',
-    newSecret: 'New secret',
+    vault: 'Encrypted vault',
+
+    searchPlaceholder: 'Search secrets, categories, tags or notes',
+    searchLabel: 'Search secrets',
+    clearSearch: 'Clear search',
+
     allCategories: 'All',
-    noSecretsFound: 'No secrets found',
-    noSecretsHint: 'Press "N" or click "+ New secret" to store your first token.',
-    copy: 'Copy',
-    copied: 'Copied!',
-    reveal: 'Reveal',
-    hide: 'Hide',
-    edit: 'Edit',
-    delete: 'Delete',
-    confirmDeleteTitle: 'Delete secret',
-    confirmDeleteMessage: 'Are you sure you want to delete this secret? This action cannot be undone.',
-    cancel: 'Cancel',
-    save: 'Save secret',
-    saving: 'Saving…',
-    modalNewTitle: 'Create new secret',
-    modalEditTitle: 'Edit secret',
-    fieldTitle: 'Name / Service',
-    fieldNamePlaceholder: 'e.g. Anthropic, GitHub, OpenAI, Cloudflare',
-    fieldSecret: 'Secret value / Token',
-    fieldSecretPlaceholder: 'Paste your secret token here',
-    fieldCategory: 'Category',
-    fieldCategoryPlaceholder: 'e.g. AI, Development, Infrastructure',
-    fieldTags: 'Tags (comma separated)',
-    fieldTagsPlaceholder: 'e.g. production, api, personal',
-    fieldNotes: 'Notes (optional)',
-    fieldNotesPlaceholder: 'e.g. Expires in 2027, read-only scope',
-    generateToken: 'Generate random key',
+    sidebarLabel: 'Vault sections',
+    revealAll: 'Reveal all',
+    hideAll: 'Hide all',
+    overviewTitle: 'Overview',
+    statSecrets: 'Secrets',
+    statCategories: 'Categories',
+    statLastUpdate: 'Last update',
+    never: 'Never',
+    categoriesLabel: 'Filter by category',
+
+    newSecret: 'New secret',
     lockVault: 'Lock vault',
-    setupTitle: 'Welcome to KeyStash',
-    setupSubtitle: 'Set your master password to initialize your encrypted vault.',
-    loginTitle: 'KeyStash Vault Locked',
-    loginSubtitle: 'Enter your master password to unlock your secrets.',
-    masterPasswordLabel: 'Master password',
-    confirmPasswordLabel: 'Confirm master password',
-    masterPasswordPlaceholder: '••••••••••••••••',
-    setupButton: 'Initialize Vault',
-    loginButton: 'Unlock Vault',
-    passwordMismatch: 'Passwords do not match.',
-    passwordTooShort: 'Master password must be at least 8 characters.',
-    invalidPassword: 'Incorrect master password.',
-    rateLimited: 'Too many failed login attempts. Please wait 15 minutes before trying again.',
-    vaultLocked: 'Vault locked. Please authenticate.',
-    shortcutsHint: 'Keyboard: / to search • N to create • Esc to close • Arrow keys to select • Enter to copy',
     themeToggle: 'Toggle theme',
     language: 'Language',
-    totalSecrets: 'secrets stored',
-    vault: 'Vault',
-    categories: 'Categories',
+    totalSecrets: 'secrets',
+
+    copy: 'Copy',
+    copied: 'Copied',
+    copyAria: 'Copy {name}',
+    reveal: 'Reveal',
+    hide: 'Hide',
+    revealAria: 'Reveal the value of {name}',
     actions: 'Actions',
-    updated: 'Updated',
+    edit: 'Edit',
+    delete: 'Delete',
+    deleteAria: 'Delete {name}',
+    listLabel: 'Stored secrets',
     emptyTitle: 'Your vault is empty',
     emptySubtitle: 'Store your first API key or token to get started.',
     addSecret: 'Add secret',
-    searchHint: 'Search secrets…',
+    noResultsTitle: 'No matching secrets',
+    noResultsSubtitle: 'No entry matches your search or the selected category.',
+    loadingVault: 'Unlocking vault',
+    resultsCount: '{count} secrets shown',
+
+    modalNewTitle: 'New secret',
+    modalEditTitle: 'Edit secret',
+    closeSheet: 'Close',
+    fieldTitle: 'Name',
+    fieldNamePlaceholder: 'Anthropic, GitHub, OpenAI…',
+    fieldSecret: 'Secret value',
+    fieldSecretPlaceholder: 'Paste the token here',
+    fieldSecretUnchanged: 'Unchanged',
+    fieldSecretKeepHint: 'Leave empty to keep the current value',
+    fieldCategory: 'Category',
+    fieldCategoryPlaceholder: 'AI',
+    fieldTags: 'Tags',
+    fieldTagsPlaceholder: 'production, api, personal',
+    fieldNotes: 'Notes',
+    fieldNotesPlaceholder: 'Expires 2027, read-only scope',
+    generateToken: 'Generate',
+    save: 'Save',
+    saving: 'Saving',
+    cancel: 'Cancel',
+
+    confirmDeleteTitle: 'Delete secret',
+    confirmDeleteMessage: 'This permanently removes the encrypted entry. This cannot be undone.',
+
+    setupTitle: 'Set up your vault',
+    setupSubtitle: 'Choose a master password to encrypt your secrets.',
+    setupButton: 'Create vault',
+    masterPasswordLabel: 'Master password',
+    confirmPasswordLabel: 'Confirm master password',
+    masterPasswordPlaceholder: 'At least 8 characters',
+    passwordPlaceholder: 'Enter your master password',
+
+    loginTitle: 'Vault locked',
+    loginSubtitle: 'Enter your master password to continue.',
+    loginButton: 'Unlock',
+
+    fieldRequired: 'This field is required.',
+    passwordMismatch: 'Passwords do not match.',
+    passwordTooShort: 'The master password must be at least 8 characters.',
+    invalidPassword: 'Incorrect master password.',
+    rateLimited: 'Too many failed attempts. Try again in 15 minutes.',
+    connectionError: 'Connection error.',
+    setupFailed: 'Could not create the vault.',
+    saveFailed: 'Could not save the secret.',
+    loading: 'Loading',
   },
+
   fr: {
     appName: 'KeyStash',
-    tagline: 'Coffre minimaliste de clés et tokens',
-    searchPlaceholder: 'Rechercher des clés, catégories, tags ou notes… ( / ou Ctrl+K )',
-    newSecret: 'Nouveau secret',
+    vault: 'Coffre chiffré',
+
+    searchPlaceholder: 'Rechercher un secret, une catégorie, un tag',
+    searchLabel: 'Rechercher un secret',
+    clearSearch: 'Effacer la recherche',
+
     allCategories: 'Tous',
-    noSecretsFound: 'Aucun secret trouvé',
-    noSecretsHint: 'Appuyez sur "N" ou cliquez sur "+ Nouveau secret" pour enregistrer votre premier token.',
+    sidebarLabel: 'Sections du coffre',
+    revealAll: 'Tout afficher',
+    hideAll: 'Tout masquer',
+    overviewTitle: 'Vue d’ensemble',
+    statSecrets: 'Secrets',
+    statCategories: 'Catégories',
+    statLastUpdate: 'Dernière modif.',
+    never: 'Jamais',
+    categoriesLabel: 'Filtrer par catégorie',
+
+    newSecret: 'Nouveau secret',
+    lockVault: 'Verrouiller',
+    themeToggle: 'Changer de thème',
+    language: 'Langue',
+    totalSecrets: 'secrets',
+
     copy: 'Copier',
-    copied: 'Copié !',
+    copied: 'Copié',
+    copyAria: 'Copier {name}',
     reveal: 'Afficher',
     hide: 'Masquer',
+    revealAria: 'Afficher la valeur de {name}',
+    actions: 'Actions',
     edit: 'Modifier',
     delete: 'Supprimer',
-    confirmDeleteTitle: 'Supprimer le secret',
-    confirmDeleteMessage: 'Voulez-vous vraiment supprimer ce secret ? Cette action est irréversible.',
-    cancel: 'Annuler',
-    save: 'Enregistrer',
-    saving: 'Enregistrement…',
-    modalNewTitle: 'Créer un secret',
+    deleteAria: 'Supprimer {name}',
+    listLabel: 'Secrets enregistrés',
+    emptyTitle: 'Votre coffre est vide',
+    emptySubtitle: 'Enregistrez votre première clé API pour commencer.',
+    addSecret: 'Ajouter un secret',
+    noResultsTitle: 'Aucun secret correspondant',
+    noResultsSubtitle: 'Aucune entrée ne correspond à votre recherche ou à la catégorie choisie.',
+    loadingVault: 'Déverrouillage du coffre',
+    resultsCount: '{count} secrets affichés',
+
+    modalNewTitle: 'Nouveau secret',
     modalEditTitle: 'Modifier le secret',
-    fieldTitle: 'Nom / Service',
-    fieldNamePlaceholder: 'ex. Anthropic, GitHub, OpenAI, Cloudflare',
-    fieldSecret: 'Valeur secrète / Token',
-    fieldSecretPlaceholder: 'Collez votre token secret ici',
+    closeSheet: 'Fermer',
+    fieldTitle: 'Nom',
+    fieldNamePlaceholder: 'Anthropic, GitHub, OpenAI…',
+    fieldSecret: 'Valeur du secret',
+    fieldSecretPlaceholder: 'Collez le token ici',
+    fieldSecretUnchanged: 'Inchangée',
+    fieldSecretKeepHint: 'Laissez vide pour conserver la valeur actuelle',
     fieldCategory: 'Catégorie',
-    fieldCategoryPlaceholder: 'ex. IA, Développement, Infrastructure',
-    fieldTags: 'Tags (séparés par des virgules)',
-    fieldTagsPlaceholder: 'ex. production, api, personnel',
-    fieldNotes: 'Notes (facultatif)',
-    fieldNotesPlaceholder: 'ex. Expire en 2027, scope lecture seule',
-    generateToken: 'Générer un token',
-    lockVault: 'Verrouiller',
-    setupTitle: 'Bienvenue sur KeyStash',
-    setupSubtitle: 'Définissez votre mot de passe maître pour initialiser votre coffre chiffré.',
-    loginTitle: 'Coffre KeyStash verrouillé',
-    loginSubtitle: 'Entrez votre mot de passe maître pour déverrouiller vos secrets.',
+    fieldCategoryPlaceholder: 'IA',
+    fieldTags: 'Tags',
+    fieldTagsPlaceholder: 'production, api, personnel',
+    fieldNotes: 'Notes',
+    fieldNotesPlaceholder: 'Expire en 2027, lecture seule',
+    generateToken: 'Générer',
+    save: 'Enregistrer',
+    saving: 'Enregistrement',
+    cancel: 'Annuler',
+
+    confirmDeleteTitle: 'Supprimer le secret',
+    confirmDeleteMessage: 'Cette entrée chiffrée est définitivement supprimée. Action irréversible.',
+
+    setupTitle: 'Configurer le coffre',
+    setupSubtitle: 'Choisissez un mot de passe maître pour chiffrer vos secrets.',
+    setupButton: 'Créer le coffre',
     masterPasswordLabel: 'Mot de passe maître',
     confirmPasswordLabel: 'Confirmer le mot de passe maître',
-    masterPasswordPlaceholder: '••••••••••••••••',
-    setupButton: 'Initialiser le coffre',
-    loginButton: 'Déverrouiller le coffre',
+    masterPasswordPlaceholder: '8 caractères minimum',
+    passwordPlaceholder: 'Saisissez votre mot de passe maître',
+
+    loginTitle: 'Coffre verrouillé',
+    loginSubtitle: 'Saisissez votre mot de passe maître pour continuer.',
+    loginButton: 'Déverrouiller',
+
+    fieldRequired: 'Ce champ est obligatoire.',
     passwordMismatch: 'Les mots de passe ne correspondent pas.',
     passwordTooShort: 'Le mot de passe maître doit comporter au moins 8 caractères.',
     invalidPassword: 'Mot de passe maître incorrect.',
-    rateLimited: 'Trop de tentatives échouées. Veuillez patienter 15 minutes.',
-    vaultLocked: 'Coffre verrouillé. Veuillez vous authentifier.',
-    shortcutsHint: 'Clavier : / pour chercher • N pour créer • Échap pour fermer • Flèches pour naviguer • Entrée pour copier',
-    themeToggle: 'Changer de thème',
-    language: 'Langue',
-    totalSecrets: 'secrets enregistrés',
-    vault: 'Coffre',
-    categories: 'Catégories',
-    actions: 'Actions',
-    updated: 'Modifié',
-    emptyTitle: 'Votre coffre est vide',
-    emptySubtitle: 'Enregistrez votre première clé API ou token pour commencer.',
-    addSecret: 'Ajouter un secret',
-    searchHint: 'Rechercher des secrets…',
+    rateLimited: 'Trop de tentatives échouées. Réessayez dans 15 minutes.',
+    connectionError: 'Erreur de connexion.',
+    setupFailed: 'Impossible de créer le coffre.',
+    saveFailed: "Impossible d'enregistrer le secret.",
+    loading: 'Chargement',
   },
+
   es: {
     appName: 'KeyStash',
-    tagline: 'Cofre minimalista de claves y tokens',
-    searchPlaceholder: 'Buscar secretos, categorías, etiquetas o notas… ( / o Ctrl+K )',
-    newSecret: 'Nuevo secreto',
+    vault: 'Cofre cifrado',
+
+    searchPlaceholder: 'Buscar un secreto, categoría o etiqueta',
+    searchLabel: 'Buscar un secreto',
+    clearSearch: 'Borrar la búsqueda',
+
     allCategories: 'Todos',
-    noSecretsFound: 'No se encontraron secretos',
-    noSecretsHint: 'Presione "N" o haga clic en "+ Nuevo secreto" para guardar su primer token.',
+    sidebarLabel: 'Secciones del cofre',
+    revealAll: 'Mostrar todo',
+    hideAll: 'Ocultar todo',
+    overviewTitle: 'Resumen',
+    statSecrets: 'Secretos',
+    statCategories: 'Categorías',
+    statLastUpdate: 'Última edición',
+    never: 'Nunca',
+    categoriesLabel: 'Filtrar por categoría',
+
+    newSecret: 'Nuevo secreto',
+    lockVault: 'Bloquear',
+    themeToggle: 'Cambiar tema',
+    language: 'Idioma',
+    totalSecrets: 'secretos',
+
     copy: 'Copiar',
-    copied: '¡Copiado!',
+    copied: 'Copiado',
+    copyAria: 'Copiar {name}',
     reveal: 'Mostrar',
     hide: 'Ocultar',
+    revealAria: 'Mostrar el valor de {name}',
+    actions: 'Acciones',
     edit: 'Editar',
     delete: 'Eliminar',
-    confirmDeleteTitle: 'Eliminar secreto',
-    confirmDeleteMessage: '¿Está seguro de que desea eliminar este secreto? Esta acción es irreversible.',
-    cancel: 'Cancelar',
-    save: 'Guardar secreto',
-    saving: 'Guardando…',
-    modalNewTitle: 'Crear nuevo secreto',
+    deleteAria: 'Eliminar {name}',
+    listLabel: 'Secretos guardados',
+    emptyTitle: 'Su cofre está vacío',
+    emptySubtitle: 'Guarde su primera clave API para comenzar.',
+    addSecret: 'Agregar secreto',
+    noResultsTitle: 'Ningún secreto coincide',
+    noResultsSubtitle: 'Ninguna entrada coincide con su búsqueda o la categoría elegida.',
+    loadingVault: 'Desbloqueando el cofre',
+    resultsCount: '{count} secretos mostrados',
+
+    modalNewTitle: 'Nuevo secreto',
     modalEditTitle: 'Editar secreto',
-    fieldTitle: 'Nombre / Servicio',
-    fieldNamePlaceholder: 'ej. Anthropic, GitHub, OpenAI, Cloudflare',
-    fieldSecret: 'Valor secreto / Token',
-    fieldSecretPlaceholder: 'Pegue su token secreto aquí',
+    closeSheet: 'Cerrar',
+    fieldTitle: 'Nombre',
+    fieldNamePlaceholder: 'Anthropic, GitHub, OpenAI…',
+    fieldSecret: 'Valor del secreto',
+    fieldSecretPlaceholder: 'Pegue el token aquí',
+    fieldSecretUnchanged: 'Sin cambios',
+    fieldSecretKeepHint: 'Déjelo vacío para conservar el valor actual',
     fieldCategory: 'Categoría',
-    fieldCategoryPlaceholder: 'ej. IA, Desarrollo, Infraestructura',
-    fieldTags: 'Etiquetas (separadas por comas)',
-    fieldTagsPlaceholder: 'ej. producción, api, personal',
-    fieldNotes: 'Notas (opcional)',
-    fieldNotesPlaceholder: 'ej. Expira en 2027, alcance de solo lectura',
-    generateToken: 'Generar token aleatorio',
-    lockVault: 'Bloquear cofre',
-    setupTitle: 'Bienvenido a KeyStash',
-    setupSubtitle: 'Defina su contraseña maestra para inicializar su cofre cifrado.',
-    loginTitle: 'Cofre KeyStash bloqueado',
-    loginSubtitle: 'Ingrese su contraseña maestra para desbloquear sus secretos.',
+    fieldCategoryPlaceholder: 'IA',
+    fieldTags: 'Etiquetas',
+    fieldTagsPlaceholder: 'produccion, api, personal',
+    fieldNotes: 'Notas',
+    fieldNotesPlaceholder: 'Caduca en 2027, solo lectura',
+    generateToken: 'Generar',
+    save: 'Guardar',
+    saving: 'Guardando',
+    cancel: 'Cancelar',
+
+    confirmDeleteTitle: 'Eliminar secreto',
+    confirmDeleteMessage: 'Esta entrada cifrada se elimina de forma permanente. No se puede deshacer.',
+
+    setupTitle: 'Configure su cofre',
+    setupSubtitle: 'Elija una contraseña maestra para cifrar sus secretos.',
+    setupButton: 'Crear cofre',
     masterPasswordLabel: 'Contraseña maestra',
     confirmPasswordLabel: 'Confirmar contraseña maestra',
-    masterPasswordPlaceholder: '••••••••••••••••',
-    setupButton: 'Inicializar cofre',
-    loginButton: 'Desbloquear cofre',
+    masterPasswordPlaceholder: 'Mínimo 8 caracteres',
+    passwordPlaceholder: 'Introduzca su contraseña maestra',
+
+    loginTitle: 'Cofre bloqueado',
+    loginSubtitle: 'Introduzca su contraseña maestra para continuar.',
+    loginButton: 'Desbloquear',
+
+    fieldRequired: 'Este campo es obligatorio.',
     passwordMismatch: 'Las contraseñas no coinciden.',
     passwordTooShort: 'La contraseña maestra debe tener al menos 8 caracteres.',
     invalidPassword: 'Contraseña maestra incorrecta.',
-    rateLimited: 'Demasiados intentos fallidos. Espere 15 minutes.',
-    vaultLocked: 'Cofre bloqueado. Por favor autentíquese.',
-    shortcutsHint: 'Teclado: / para buscar • N para crear • Esc para cerrar • Flechas para navegar • Enter para copiar',
-    themeToggle: 'Cambiar tema',
-    language: 'Idioma',
-    totalSecrets: 'secretos guardados',
-    vault: 'Cofre',
-    categories: 'Categorías',
-    actions: 'Acciones',
-    updated: 'Actualizado',
-    emptyTitle: 'Su cofre está vacío',
-    emptySubtitle: 'Guarde su primera clave API o token para comenzar.',
-    addSecret: 'Agregar secreto',
-    searchHint: 'Buscar secretos…',
+    rateLimited: 'Demasiados intentos fallidos. Inténtelo en 15 minutos.',
+    connectionError: 'Error de conexión.',
+    setupFailed: 'No se pudo crear el cofre.',
+    saveFailed: 'No se pudo guardar el secreto.',
+    loading: 'Cargando',
   },
+
   de: {
     appName: 'KeyStash',
-    tagline: 'Minimalistischer Tresor für Secrets und Token',
-    searchPlaceholder: 'Secrets, Kategorien, Tags oder Notizen durchsuchen… ( / oder Ctrl+K )',
-    newSecret: 'Neues Secret',
+    vault: 'Verschlüsselter Tresor',
+
+    searchPlaceholder: 'Secret, Kategorie oder Tag suchen',
+    searchLabel: 'Secret suchen',
+    clearSearch: 'Suche löschen',
+
     allCategories: 'Alle',
-    noSecretsFound: 'Keine Secrets gefunden',
-    noSecretsHint: 'Drücken Sie „N“ oder klicken Sie auf „+ Neues Secret“, um Ihr erstes Token zu speichern.',
+    sidebarLabel: 'Tresor-Bereiche',
+    revealAll: 'Alle anzeigen',
+    hideAll: 'Alle verbergen',
+    overviewTitle: 'Übersicht',
+    statSecrets: 'Secrets',
+    statCategories: 'Kategorien',
+    statLastUpdate: 'Zuletzt geändert',
+    never: 'Nie',
+    categoriesLabel: 'Nach Kategorie filtern',
+
+    newSecret: 'Neues Secret',
+    lockVault: 'Sperren',
+    themeToggle: 'Design wechseln',
+    language: 'Sprache',
+    totalSecrets: 'Secrets',
+
     copy: 'Kopieren',
-    copied: 'Kopiert!',
+    copied: 'Kopiert',
+    copyAria: '{name} kopieren',
     reveal: 'Anzeigen',
     hide: 'Verbergen',
+    revealAria: 'Wert von {name} anzeigen',
+    actions: 'Aktionen',
     edit: 'Bearbeiten',
     delete: 'Löschen',
-    confirmDeleteTitle: 'Secret löschen',
-    confirmDeleteMessage: 'Möchten Sie dieses Secret wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
-    cancel: 'Abbrechen',
-    save: 'Secret speichern',
-    saving: 'Speichern…',
-    modalNewTitle: 'Neues Secret erstellen',
+    deleteAria: '{name} löschen',
+    listLabel: 'Gespeicherte Secrets',
+    emptyTitle: 'Ihr Tresor ist leer',
+    emptySubtitle: 'Speichern Sie Ihren ersten API-Schlüssel, um zu beginnen.',
+    addSecret: 'Secret hinzufügen',
+    noResultsTitle: 'Keine passenden Secrets',
+    noResultsSubtitle: 'Kein Eintrag passt zu Ihrer Suche oder der gewählten Kategorie.',
+    loadingVault: 'Tresor wird entsperrt',
+    resultsCount: '{count} Secrets angezeigt',
+
+    modalNewTitle: 'Neues Secret',
     modalEditTitle: 'Secret bearbeiten',
-    fieldTitle: 'Name / Dienst',
-    fieldNamePlaceholder: 'z.B. Anthropic, GitHub, OpenAI, Cloudflare',
-    fieldSecret: 'Geheimwert / Token',
-    fieldSecretPlaceholder: 'Fügen Sie Ihr geheimes Token hier ein',
+    closeSheet: 'Schließen',
+    fieldTitle: 'Name',
+    fieldNamePlaceholder: 'Anthropic, GitHub, OpenAI…',
+    fieldSecret: 'Secret-Wert',
+    fieldSecretPlaceholder: 'Token hier einfügen',
+    fieldSecretUnchanged: 'Unverändert',
+    fieldSecretKeepHint: 'Leer lassen, um den aktuellen Wert zu behalten',
     fieldCategory: 'Kategorie',
-    fieldCategoryPlaceholder: 'z.B. KI, Entwicklung, Infrastruktur',
-    fieldTags: 'Tags (durch Komma getrennt)',
-    fieldTagsPlaceholder: 'z.B. Produktion, API, Persönlich',
-    fieldNotes: 'Notizen (optional)',
-    fieldNotesPlaceholder: 'z.B. Läuft 2027 ab, Nur-Lese-Rechte',
-    generateToken: 'Zufälliges Token generieren',
-    lockVault: 'Tresor sperren',
-    setupTitle: 'Willkommen bei KeyStash',
-    setupSubtitle: 'Legen Sie Ihr Master-Passwort fest, um Ihren verschlüsselten Tresor zu initialisieren.',
-    loginTitle: 'KeyStash Tresor gesperrt',
-    loginSubtitle: 'Geben Sie Ihr Master-Passwort ein, um Ihre Secrets zu entsperren.',
+    fieldCategoryPlaceholder: 'KI',
+    fieldTags: 'Tags',
+    fieldTagsPlaceholder: 'produktion, api, privat',
+    fieldNotes: 'Notizen',
+    fieldNotesPlaceholder: 'Läuft 2027 ab, nur lesen',
+    generateToken: 'Generieren',
+    save: 'Speichern',
+    saving: 'Speichert',
+    cancel: 'Abbrechen',
+
+    confirmDeleteTitle: 'Secret löschen',
+    confirmDeleteMessage: 'Dieser verschlüsselte Eintrag wird endgültig entfernt. Das kann nicht rückgängig gemacht werden.',
+
+    setupTitle: 'Tresor einrichten',
+    setupSubtitle: 'Wählen Sie ein Master-Passwort, um Ihre Secrets zu verschlüsseln.',
+    setupButton: 'Tresor erstellen',
     masterPasswordLabel: 'Master-Passwort',
     confirmPasswordLabel: 'Master-Passwort bestätigen',
-    masterPasswordPlaceholder: '••••••••••••••••',
-    setupButton: 'Tresor initialisieren',
-    loginButton: 'Tresor entsperren',
+    masterPasswordPlaceholder: 'Mindestens 8 Zeichen',
+    passwordPlaceholder: 'Master-Passwort eingeben',
+
+    loginTitle: 'Tresor gesperrt',
+    loginSubtitle: 'Geben Sie Ihr Master-Passwort ein, um fortzufahren.',
+    loginButton: 'Entsperren',
+
+    fieldRequired: 'Dieses Feld ist erforderlich.',
     passwordMismatch: 'Die Passwörter stimmen nicht überein.',
     passwordTooShort: 'Das Master-Passwort muss mindestens 8 Zeichen lang sein.',
     invalidPassword: 'Falsches Master-Passwort.',
-    rateLimited: 'Zu viele fehlgeschlagene Versuche. Bitte warten Sie 15 Minuten.',
-    vaultLocked: 'Tresor gesperrt. Bitte authentifizieren Sie sich.',
-    shortcutsHint: 'Tastatur: / zum Suchen • N zum Erstellen • Esc zum Schließen • Pfeiltasten zum Auswählen • Enter zum Kopieren',
-    themeToggle: 'Design wechseln',
-    language: 'Sprache',
-    totalSecrets: 'gespeicherte Secrets',
-    vault: 'Tresor',
-    categories: 'Kategorien',
-    actions: 'Aktionen',
-    updated: 'Aktualisiert',
-    emptyTitle: 'Ihr Tresor ist leer',
-    emptySubtitle: 'Speichern Sie Ihren ersten API-Schlüssel oder Ihr erstes Token.',
-    addSecret: 'Secret hinzufügen',
-    searchHint: 'Secrets suchen…',
+    rateLimited: 'Zu viele fehlgeschlagene Versuche. In 15 Minuten erneut versuchen.',
+    connectionError: 'Verbindungsfehler.',
+    setupFailed: 'Der Tresor konnte nicht erstellt werden.',
+    saveFailed: 'Das Secret konnte nicht gespeichert werden.',
+    loading: 'Lädt',
   },
 };
 
+/** Replaces {token} placeholders in a translated string. */
+export function fill(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match,
+  );
+}

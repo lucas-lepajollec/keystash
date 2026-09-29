@@ -1,554 +1,630 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react';
-import { translations, type Locale, type Translations } from '@/lib/i18n';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, EyeOff, Lock, Moon, Plus, Search, Sun, X } from 'lucide-react';
+import { fill, translations, LOCALES, type Locale, type Translations } from '@/lib/i18n';
 import { SecretRow, type SecretData } from './SecretRow';
-import { SecretModal } from './SecretModal';
+import { SecretModal, type SecretDraft } from './SecretModal';
 import { SetupView } from './SetupView';
 import { LoginView } from './LoginView';
 import { KeyStashLogo } from './KeyStashLogo';
-import { Plus, Search, Globe, Sun, Moon, Lock, ShieldAlert } from 'lucide-react';
+import { LocaleSelect } from './LocaleSelect';
+import { SidebarNav } from './SidebarNav';
 import { copyToClipboard } from '@/lib/clipboard';
+import { createStoredValue, useStoredValue, themeCodec, localeCodec } from '@/lib/useStoredValue';
 
-function subscribeToStorage(callback: () => void) {
-  window.addEventListener('storage', callback);
-  return () => window.removeEventListener('storage', callback);
+const themeStore = createStoredValue('keystash_theme', themeCodec);
+const localeStore = createStoredValue('keystash_locale', localeCodec(LOCALES));
+
+interface AuthStatus {
+  loading: boolean;
+  configured: boolean;
+  authenticated: boolean;
 }
 
-function getLocaleSnapshot(): Locale {
-  if (typeof window === 'undefined') return 'en';
-  const saved = localStorage.getItem('keystash_locale') as Locale | null;
-  return saved && ['en', 'fr', 'es', 'de'].includes(saved) ? saved : 'en';
-}
+const IDLE: AuthStatus = { loading: true, configured: false, authenticated: false };
 
-function getThemeSnapshot(): boolean {
-  if (typeof window === 'undefined') return true;
-  return localStorage.getItem('keystash_theme') !== 'light';
+const REVEAL_ALL_TIMEOUT_MS = 15_000;
+
+function formatRelative(timestamp: number, t: Translations, locale: Locale): string {
+  if (!timestamp) return t.never;
+  const seconds = Math.round((Date.now() - timestamp) / 1000);
+  const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+    ['second', 60],
+    ['minute', 60],
+    ['hour', 24],
+    ['day', 7],
+    ['week', 4.348],
+    ['month', 12],
+  ];
+  let value = -seconds;
+  for (const [unit, size] of units) {
+    if (Math.abs(value) < size) {
+      return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
+        Math.round(value),
+        unit,
+      );
+    }
+    value /= size;
+  }
+  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
+    Math.round(value),
+    'year',
+  );
 }
 
 export const VaultApp: React.FC = () => {
-  const storedLocale = useSyncExternalStore(subscribeToStorage, getLocaleSnapshot, () => 'en' as Locale);
-  const storedIsDark = useSyncExternalStore(subscribeToStorage, getThemeSnapshot, () => true);
+  const [locale, setLocale] = useStoredValue(localeStore) as [Locale, (l: Locale) => void];
+  const [isDark, setIsDark] = useStoredValue(themeStore);
 
-  const [localeOverride, setLocaleOverride] = useState<Locale | null>(null);
-  const [themeOverride, setThemeOverride] = useState<boolean | null>(null);
-
-  const locale: Locale = localeOverride ?? storedLocale;
-  const isDark: boolean = themeOverride ?? storedIsDark;
-
-  const [authStatus, setAuthStatus] = useState<{
-    loading: boolean;
-    configured: boolean;
-    authenticated: boolean;
-  }>({
-    loading: true,
-    configured: false,
-    authenticated: false,
-  });
-
+  const [auth, setAuth] = useState<AuthStatus>(IDLE);
   const [secrets, setSecrets] = useState<SecretData[]>([]);
   const [loadingSecrets, setLoadingSecrets] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingSecret, setEditingSecret] = useState<SecretData | null>(null);
+
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editing, setEditing] = useState<SecretData | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<SecretData | null>(null);
+  const [cursor, setCursor] = useState(-1);
+  const [revealAll, setRevealAll] = useState(false);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadInitialData() {
-      try {
-        const res = await fetch('/api/auth/status');
-        const data = await res.json();
-        if (ignore) return;
-
-        setAuthStatus({
-          loading: false,
-          configured: data.configured,
-          authenticated: data.authenticated,
-        });
-
-        if (data.authenticated) {
-          setLoadingSecrets(true);
-          const secRes = await fetch('/api/secrets');
-          if (!ignore && secRes.ok) {
-            const secData = await secRes.json();
-            setSecrets(secData.secrets || []);
-          }
-          if (!ignore) setLoadingSecrets(false);
-        }
-      } catch {
-        if (!ignore) {
-          setAuthStatus({
-            loading: false,
-            configured: false,
-            authenticated: false,
-          });
-          setLoadingSecrets(false);
-        }
-      }
-    }
-
-    void loadInitialData();
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  const refreshAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/status');
-      const data = await res.json();
-      setAuthStatus({
-        loading: false,
-        configured: data.configured,
-        authenticated: data.authenticated,
-      });
-
-      if (data.authenticated) {
-        setLoadingSecrets(true);
-        const secRes = await fetch('/api/secrets');
-        if (secRes.ok) {
-          const secData = await secRes.json();
-          setSecrets(secData.secrets || []);
-        }
-        setLoadingSecrets(false);
-      }
-    } catch {
-      setAuthStatus({
-        loading: false,
-        configured: false,
-        authenticated: false,
-      });
-    }
-  };
+  const searchRef = useRef<HTMLInputElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
   const t: Translations = translations[locale];
 
-  const handleLocaleChange = (newLocale: Locale) => {
-    setLocaleOverride(newLocale);
-    localStorage.setItem('keystash_locale', newLocale);
-  };
+  /* ---------- theme + locale sync ---------- */
 
-  const handleToggleTheme = () => {
-    const nextDark = !isDark;
-    setThemeOverride(nextDark);
-    if (nextDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('keystash_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('keystash_theme', 'light');
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  /* ---------- data ---------- */
+
+  const loadVault = useCallback(async () => {
+    setLoadingSecrets(true);
+    try {
+      const res = await fetch('/api/secrets', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setSecrets(data.secrets ?? []);
+      }
+    } finally {
+      setLoadingSecrets(false);
     }
-  };
+  }, []);
 
-  // Filter secrets based on search & category
-  const filteredSecrets = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    return secrets.filter((s) => {
-      const matchesCategory =
-        selectedCategory === 'All' || s.category.toLowerCase() === selectedCategory.toLowerCase();
+  const syncAuth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/status', { cache: 'no-store' });
+      const data = await res.json();
+      const authenticated = Boolean(data.authenticated);
+      setAuth({
+        loading: false,
+        configured: Boolean(data.configured),
+        authenticated,
+      });
+      if (authenticated) {
+        await loadVault();
+      } else {
+        setSecrets([]);
+      }
+      return authenticated;
+    } catch {
+      setAuth({ loading: false, configured: false, authenticated: false });
+      return false;
+    }
+  }, [loadVault]);
 
-      if (!matchesCategory) return false;
-      if (!q) return true;
+  useEffect(() => {
+    // `syncAuth` awaits the network before touching state, so this is an async
+    // subscription rather than a synchronous setState during render.
+    const boot = async () => {
+      await syncAuth();
+    };
+    void boot();
+  }, [syncAuth]);
 
-      const inName = s.name.toLowerCase().includes(q);
-      const inCategory = s.category.toLowerCase().includes(q);
-      const inNotes = s.notes.toLowerCase().includes(q);
-      const inTags = s.tags.some((tag) => tag.toLowerCase().includes(q));
+  /* ---------- derived ---------- */
 
-      return inName || inCategory || inNotes || inTags;
-    });
-  }, [secrets, searchQuery, selectedCategory]);
-
-  // Extract all categories with real counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    secrets.forEach((s) => {
-      const cat = s.category || 'General';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-
-    const categoryList = Object.keys(counts).sort((a, b) => {
-      if (a === 'AI') return -1;
-      if (b === 'AI') return 1;
-      return a.localeCompare(b);
-    });
-
-    return [
-      { name: 'All', count: secrets.length },
-      ...categoryList.map((c) => ({ name: c, count: counts[c] || 0 })),
-    ];
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const s of secrets) {
+      const key = s.category || 'General';
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort(([a], [b]) => (a === 'AI' ? -1 : b === 'AI' ? 1 : a.localeCompare(b)))
+      .map(([name, count]) => ({ name, count }));
   }, [secrets]);
 
-  // Copy secret with instant feedback (supports HTTPS, localhost, and HTTP LAN contexts)
-  const handleCopy = async (secret: SecretData) => {
-    if (!secret.value) return;
-    const copied = await copyToClipboard(secret.value);
-    if (copied) {
-      setCopiedId(secret.id);
-      setTimeout(() => {
-        setCopiedId((prev) => (prev === secret.id ? null : prev));
-      }, 2000);
-    }
-  };
-
-  // Global Keyboard shortcuts (Raycast model)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const isInput =
-        activeEl?.tagName === 'INPUT' ||
-        activeEl?.tagName === 'TEXTAREA' ||
-        activeEl?.tagName === 'SELECT';
-
-      // Focus search: / or Ctrl+K / Cmd+K
-      if ((e.key === '/' && !isInput) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-
-      // Close modal / sheet / clear search
-      if (e.key === 'Escape') {
-        if (isModalOpen) {
-          setIsModalOpen(false);
-        } else if (deleteId) {
-          setDeleteId(null);
-        } else if (isInput) {
-          (activeEl as HTMLElement).blur();
-        }
-        return;
-      }
-
-      // New secret shortcut: 'n' when not typing in an input
-      if (e.key.toLowerCase() === 'n' && !isInput && !isModalOpen && authStatus.authenticated) {
-        e.preventDefault();
-        setEditingSecret(null);
-        setIsModalOpen(true);
-        return;
-      }
-
-      // Arrow navigation
-      if (!isInput && !isModalOpen && filteredSecrets.length > 0) {
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev < filteredSecrets.length - 1 ? prev + 1 : 0));
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredSecrets.length - 1));
-        } else if ((e.key === 'Enter' || e.key.toLowerCase() === 'c') && selectedIndex >= 0) {
-          e.preventDefault();
-          const target = filteredSecrets[selectedIndex];
-          if (target) {
-            handleCopy(target);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, deleteId, filteredSecrets, selectedIndex, authStatus.authenticated]);
-
-  const handleSaveSecret = async (data: {
-    id?: string;
-    name: string;
-    secret: string;
-    category: string;
-    tags: string[];
-    notes: string;
-  }) => {
-    const isUpdate = Boolean(data.id);
-    const url = isUpdate ? `/api/secrets/${data.id}` : '/api/secrets';
-    const method = isUpdate ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return secrets.filter((s) => {
+      if (category && s.category !== category) return false;
+      if (!q) return true;
+      return (
+        s.name.toLowerCase().includes(q) ||
+        s.category.toLowerCase().includes(q) ||
+        s.notes.toLowerCase().includes(q) ||
+        s.tags.some((tag) => tag.toLowerCase().includes(q))
+      );
     });
+  }, [secrets, query, category]);
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to save');
-    }
+  const vaultIsEmpty = secrets.length === 0;
 
-    const { secret: saved } = await res.json();
-    if (isUpdate) {
-      setSecrets((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
-    } else {
-      setSecrets((prev) => [saved, ...prev]);
-    }
-  };
+  const lastUpdated = useMemo(
+    () => secrets.reduce((max, s) => Math.max(max, s.updated_at), 0),
+    [secrets],
+  );
 
-  const handleDeleteSecret = async (id: string) => {
-    try {
-      const res = await fetch(`/api/secrets/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setSecrets((prev) => prev.filter((s) => s.id !== id));
-        setDeleteId(null);
+  // The vault-wide reveal is time-boxed exactly like a single-row reveal.
+  useEffect(() => {
+    if (!revealAll) return;
+    const timer = setTimeout(() => setRevealAll(false), REVEAL_ALL_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [revealAll]);
+
+  const toggleRevealAll = useCallback(() => setRevealAll((v) => !v), []);
+  const clearRevealAll = useCallback(() => setRevealAll(false), []);
+
+  // Derived, not synchronised: a filter change can never leave the keyboard
+  // cursor pointing past the end of the list.
+  const activeCursor = visible.length === 0 ? -1 : Math.min(cursor, visible.length - 1);
+
+  const resetFilters = useCallback(() => {
+    setQuery('');
+    setCategory(null);
+  }, []);
+
+  /* ---------- actions ---------- */
+
+  const handleCopy = useCallback(
+    async (secret: SecretData) => {
+      if (!secret.value) return;
+      if (await copyToClipboard(secret.value)) {
+        setCopiedId(secret.id);
+        window.setTimeout(() => {
+          setCopiedId((prev) => (prev === secret.id ? null : prev));
+        }, 2000);
       }
-    } catch {
-      // Handle error
-    }
-  };
+    },
+    [],
+  );
 
-  const handleLockVault = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } finally {
-      setAuthStatus((prev) => ({ ...prev, authenticated: false }));
-      setSecrets([]);
-    }
-  };
+  const handleSave = useCallback(
+    async (draft: SecretDraft) => {
+      const isUpdate = Boolean(draft.id);
+      const res = await fetch(isUpdate ? `/api/secrets/${draft.id}` : '/api/secrets', {
+        method: isUpdate ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(draft),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? t.saveFailed);
+      }
+      const { secret } = await res.json();
+      setSecrets((prev) =>
+        isUpdate
+          ? prev.map((s) => (s.id === secret.id ? secret : s))
+          : [secret, ...prev],
+      );
+    },
+    [t.saveFailed],
+  );
 
-  // Loading state
-  if (authStatus.loading) {
+  const handleDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    const res = await fetch(`/api/secrets/${pendingDelete.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setSecrets((prev) => prev.filter((s) => s.id !== pendingDelete.id));
+    }
+    setPendingDelete(null);
+  }, [pendingDelete]);
+
+  const handleLock = useCallback(async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    setSecrets([]);
+    setAuth((prev) => ({ ...prev, authenticated: false }));
+  }, []);
+
+  const openNew = useCallback(() => {
+    setEditing(null);
+    setSheetOpen(true);
+  }, []);
+
+  /* ---------- keyboard ---------- */
+
+  useEffect(() => {
+    if (!auth.authenticated) return;
+
+    function onKeyDown(e: KeyboardEvent) {
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement;
+
+      if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (pendingDelete) {
+          setPendingDelete(null);
+        } else if (sheetOpen) {
+          setSheetOpen(false);
+        } else if (typing) {
+          (el as HTMLElement).blur();
+        }
+        return;
+      }
+
+      if (typing) return;
+
+      if (e.key.toLowerCase() === 'n' && !sheetOpen) {
+        e.preventDefault();
+        openNew();
+        return;
+      }
+
+      if (visible.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCursor((prev) => (prev < visible.length - 1 ? prev + 1 : 0));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCursor((prev) => (prev > 0 ? prev - 1 : visible.length - 1));
+      } else if ((e.key === 'Enter' || e.key.toLowerCase() === 'c') && activeCursor >= 0) {
+        e.preventDefault();
+        const target = visible[activeCursor];
+        if (target) void handleCopy(target);
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    auth.authenticated,
+    visible,
+    activeCursor,
+    sheetOpen,
+    pendingDelete,
+    handleCopy,
+    openNew,
+  ]);
+
+  useEffect(() => {
+    if (pendingDelete) confirmRef.current?.focus();
+  }, [pendingDelete]);
+
+  /* ---------- gates ---------- */
+
+  if (auth.loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-app)]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
-          <span className="text-[11px] font-mono text-[var(--text-muted)] tracking-wider">
-            KEYSTASH...
-          </span>
-        </div>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3">
+        <span className="spinner" aria-hidden="true" />
+        <span className="font-mono text-[11px] tracking-widest text-ink-3">
+          {t.appName.toUpperCase()}
+        </span>
       </div>
     );
   }
 
-  // Setup required
-  if (!authStatus.configured) {
+  if (!auth.configured) {
     return (
       <SetupView
         t={t}
         currentLocale={locale}
-        onLocaleChange={handleLocaleChange}
+        onLocaleChange={setLocale}
         isDark={isDark}
-        onToggleTheme={handleToggleTheme}
-        onSetupSuccess={refreshAuth}
+        onToggleTheme={() => setIsDark(!isDark)}
+        onSetupSuccess={syncAuth}
       />
     );
   }
 
-  // Login required
-  if (!authStatus.authenticated) {
+  if (!auth.authenticated) {
     return (
       <LoginView
         t={t}
         currentLocale={locale}
-        onLocaleChange={handleLocaleChange}
+        onLocaleChange={setLocale}
         isDark={isDark}
-        onToggleTheme={handleToggleTheme}
-        onLoginSuccess={refreshAuth}
+        onToggleTheme={() => setIsDark(!isDark)}
+        onLoginSuccess={syncAuth}
       />
     );
   }
 
+  /* ---------- vault ---------- */
+
   return (
-    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] antialiased">
-      {/* Centered Main Workspace (approx 960px) */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        {/* Top Header Row */}
-        <header className="flex items-center justify-between gap-4 pb-6">
-          {/* Brand */}
-          <div className="flex items-center gap-2.5">
-            <KeyStashLogo className="w-5 h-5 shrink-0" />
-            <span className="font-semibold text-base tracking-tight text-[var(--text-primary)]">
+    <div className="min-h-dvh">
+      <div className="mx-auto flex w-full max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
+        {/* Navigation rail — browse without searching */}
+        <aside className="hidden w-52 shrink-0 lg:block">
+          <div className="sticky top-8 flex flex-col gap-6">
+            <SidebarNav
+              entries={[{ name: null, count: secrets.length }, ...categories]}
+              active={category}
+              onSelect={setCategory}
+              t={t}
+            />
+
+            <div className="rounded-md bg-surface p-3 ring-hair">
+              <h2 className="stamp mb-2.5">
+                {t.overviewTitle}
+              </h2>
+              <dl className="space-y-1.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="text-[11px] text-ink-2">{t.statSecrets}</dt>
+                  <dd className="font-mono text-[11px] tabular-nums text-ink">
+                    {secrets.length}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="text-[11px] text-ink-2">{t.statCategories}</dt>
+                  <dd className="font-mono text-[11px] tabular-nums text-ink">
+                    {categories.length}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="text-[11px] text-ink-2">{t.statLastUpdate}</dt>
+                  <dd className="truncate font-mono text-[11px] text-ink">
+                    {formatRelative(lastUpdated, t, locale)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+        <header className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <KeyStashLogo className="size-[18px] shrink-0" />
+            <h1 className="truncate text-[15px] font-semibold tracking-tight text-ink">
               {t.appName}
-            </span>
-            <span className="text-[11px] font-mono text-[var(--text-muted)] px-2 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+            </h1>
+            <span className="stamp hidden shrink-0 sm:inline">
               {secrets.length} {t.totalSecrets}
             </span>
           </div>
 
-          {/* Right Toolbar Actions */}
-          <div className="flex items-center gap-2">
-            {/* Language Selector */}
-            <div className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg px-2 py-1 bg-[var(--bg-surface)]">
-              <Globe className="w-3.5 h-3.5 opacity-70" />
-              <select
-                value={locale}
-                onChange={(e) => handleLocaleChange(e.target.value as Locale)}
-                className="bg-transparent border-none outline-none cursor-pointer uppercase font-mono font-medium text-[var(--text-primary)] text-xs"
-              >
-                <option value="en">EN</option>
-                <option value="fr">FR</option>
-                <option value="es">ES</option>
-                <option value="de">DE</option>
-              </select>
-            </div>
-
-            {/* Theme Toggle */}
+          <div className="flex shrink-0 items-center gap-1">
+            <LocaleSelect locale={locale} onChange={setLocale} t={t} />
             <button
-              onClick={handleToggleTheme}
-              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              type="button"
+              onClick={() => setIsDark(!isDark)}
+              className="btn-icon"
               title={t.themeToggle}
+              aria-label={t.themeToggle}
             >
-              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-violet-400" />}
+              {isDark ? (
+                <Sun className="size-3.5" aria-hidden="true" />
+              ) : (
+                <Moon className="size-3.5" aria-hidden="true" />
+              )}
             </button>
-
-            {/* Lock Button */}
             <button
-              onClick={handleLockVault}
-              className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-red-400 transition-colors cursor-pointer"
+              type="button"
+              onClick={handleLock}
+              className="btn-icon"
               title={t.lockVault}
+              aria-label={t.lockVault}
             >
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="size-3.5" aria-hidden="true" />
             </button>
-
-            {/* Primary Action Button */}
-            <button
-              onClick={() => {
-                setEditingSecret(null);
-                setIsModalOpen(true);
-              }}
-              className="btn-primary ml-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t.newSecret}</span>
+            <button type="button" onClick={openNew} className="btn-primary ml-1 px-2.5 sm:px-3">
+              <Plus className="size-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">{t.newSecret}</span>
+              <span className="sr-only sm:hidden">{t.newSecret}</span>
             </button>
           </div>
         </header>
 
-        {/* Raycast-style Command Search Bar */}
-        <div className="relative mb-3">
-          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-3 pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="w-full pl-10 pr-20 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-sm outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
-          />
-          <div className="absolute right-3 top-2.5 flex items-center gap-1 pointer-events-none">
-            <kbd className="kbd-key">/</kbd>
-            <kbd className="kbd-key hidden sm:inline-flex">Ctrl K</kbd>
+        {/* Search + vault-wide reveal */}
+        <div className="mt-5 flex items-center gap-2">          <div className="relative min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-3"
+              aria-hidden="true"
+            />
+            <input
+              ref={searchRef}
+              type="search"
+              role="searchbox"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && query) {
+                  e.stopPropagation();
+                  setQuery('');
+                }
+              }}
+              aria-label={t.searchLabel}
+              placeholder={t.searchPlaceholder}
+              className="field h-[30px] pl-8 pr-20 [&::-webkit-search-cancel-button]:hidden"
+            />
+            <div className="pointer-events-none absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    searchRef.current?.focus();
+                  }}
+                  className="btn-icon pointer-events-auto size-6"
+                  aria-label={t.clearSearch}
+                >
+                  <X className="size-3" aria-hidden="true" />
+                </button>
+              ) : (
+                <>
+                  <kbd className="kbd">/</kbd>
+                  <kbd className="kbd hidden sm:inline-flex">⌘K</kbd>
+                </>
+              )}
+            </div>
           </div>
+
+          {secrets.length > 0 && (
+            <button
+              type="button"
+              onClick={toggleRevealAll}
+              aria-pressed={revealAll}
+              className={`btn h-[30px] shrink-0 px-2.5 text-[12px] ${
+                revealAll
+                  ? 'bg-accent-soft text-accent-ink'
+                  : 'text-ink-2 ring-hair hover:bg-sunken hover:text-ink'
+              }`}
+              title={revealAll ? t.hideAll : t.revealAll}
+            >
+              {revealAll ? (
+                <EyeOff className="size-3.5" aria-hidden="true" />
+              ) : (
+                <Eye className="size-3.5" aria-hidden="true" />
+              )}
+              <span className="hidden md:inline">{revealAll ? t.hideAll : t.revealAll}</span>
+            </button>
+          )}
         </div>
 
-        {/* Compact Category Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-4 pt-1">
-          {categoryCounts.map((cat) => {
-            const isSelected = selectedCategory === cat.name;
-            return (
-              <button
-                key={cat.name}
-                onClick={() => setSelectedCategory(cat.name)}
-                className={`px-2.5 py-1 text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                  isSelected
-                    ? 'bg-violet-500/15 text-violet-300 border border-violet-500/30 font-semibold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
-                }`}
-              >
-                <span>{cat.name === 'All' ? t.allCategories : cat.name}</span>
-                <span className="text-[10px] font-mono opacity-70">
-                  {cat.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Categories: rail on desktop, scroller below it */}
+        {categories.length > 0 && (
+          <nav
+            aria-label={t.categoriesLabel}
+            className="no-scrollbar -mx-4 mt-3 flex items-center gap-1 overflow-x-auto px-4 lg:hidden"
+          >
+            {[{ name: null, count: secrets.length }, ...categories].map((item) => {
+              const active = category === item.name;
+              return (
+                <button
+                  key={item.name ?? '__all'}
+                  type="button"
+                  onClick={() => setCategory(active ? null : item.name)}
+                  aria-pressed={active}
+                  className={`flex shrink-0 items-center gap-1.5 rounded px-2 py-1 text-[12px] transition-colors ${
+                    active
+                      ? 'bg-accent-soft font-medium text-accent-ink'
+                      : 'text-ink-2 hover:bg-sunken hover:text-ink'
+                  }`}
+                >
+                  {item.name ?? t.allCategories}
+                  <span className="font-mono text-[10px] opacity-60">{item.count}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
-        {/* Main Secrets List (Clean Rows, Zero Outer Card) */}
-        <main className="mt-2">
+        {/* Results */}
+        <main className="mt-4">
+          <p aria-live="polite" className="sr-only">
+            {fill(t.resultsCount, { count: visible.length })}
+          </p>
+
           {loadingSecrets ? (
-            <div className="flex justify-center py-24">
-              <div className="w-6 h-6 border-2 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+            <div className="flex justify-center py-20">
+              <span className="spinner" aria-hidden="true" />
             </div>
-          ) : filteredSecrets.length === 0 ? (
-            /* Seamless empty state on canvas */
-            <div className="flex flex-col items-center justify-center py-24 px-4 text-center select-none">
-              <KeyStashLogo className="w-8 h-8 mb-3 opacity-90" />
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] tracking-tight mb-1">
-                {t.emptyTitle}
-              </h3>
-              <p className="text-xs text-[var(--text-muted)] max-w-xs mb-4">
-                {t.emptySubtitle}
-              </p>
-              <button
-                onClick={() => {
-                  setEditingSecret(null);
-                  setIsModalOpen(true);
-                }}
-                className="btn-primary"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{t.addSecret}</span>
-              </button>
-            </div>
+          ) : vaultIsEmpty ? (
+            <EmptyState
+              title={t.emptyTitle}
+              subtitle={t.emptySubtitle}
+              actionLabel={t.addSecret}
+              onAction={openNew}
+            />
+          ) : visible.length === 0 ? (
+            <EmptyState
+              title={t.noResultsTitle}
+              subtitle={t.noResultsSubtitle}
+              actionLabel={t.clearSearch}
+              onAction={resetFilters}
+            />
           ) : (
-            /* Clean Rows List */
-            <div className="divide-y divide-[var(--border-subtle)] border-t border-[var(--border-subtle)]">
-              {filteredSecrets.map((secret, index) => (
+            <ul className="divide-y divide-line overflow-hidden rounded-md bg-surface ring-hair">
+              {visible.map((secret, index) => (
                 <SecretRow
                   key={secret.id}
                   secret={secret}
                   t={t}
-                  isSelected={selectedIndex === index}
-                  onCopy={handleCopy}
+                  isSelected={activeCursor === index}
+                  onCopy={(s) => void handleCopy(s)}
                   isCopied={copiedId === secret.id}
                   onEdit={(s) => {
-                    setEditingSecret(s);
-                    setIsModalOpen(true);
+                    setEditing(s);
+                    setSheetOpen(true);
                   }}
-                  onDelete={(id) => setDeleteId(id)}
+                  onDelete={(target) => setPendingDelete(target)}
+                  revealAll={revealAll}
+                  onRevealIndividually={clearRevealAll}
+                  expanded={revealAll}
                 />
               ))}
-            </div>
+            </ul>
           )}
         </main>
+        </div>
       </div>
 
-      {/* Right Slide-over Sheet for Secret Create / Edit */}
       <SecretModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveSecret}
-        editingSecret={editingSecret}
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onSave={handleSave}
+        editingSecret={editing}
         t={t}
-        existingCategories={categoryCounts.map((c) => c.name).filter((c) => c !== 'All')}
+        existingCategories={categories.map((c) => c.name)}
       />
 
-      {/* Delete Confirmation Dialog */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-xl shadow-2xl p-5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] animate-in fade-in zoom-in-95 duration-100">
-            <div className="flex items-center gap-3 mb-2.5 text-red-400">
-              <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
-                <ShieldAlert className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                {t.confirmDeleteTitle}
-              </h3>
-            </div>
-            <p className="text-xs text-[var(--text-secondary)] mb-5 leading-relaxed">
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="anim-fade-in absolute inset-0 bg-[var(--bg-overlay)]"
+            onClick={() => setPendingDelete(null)}
+            aria-hidden="true"
+          />
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirm-delete-title"
+            aria-describedby="confirm-delete-body"
+            className="anim-fade-in relative w-full max-w-sm rounded-md bg-surface p-5 ring-hair-strong"
+          >
+            <h2 id="confirm-delete-title" className="text-[13px] font-medium text-ink">
+              {t.confirmDeleteTitle}
+            </h2>
+            <p id="confirm-delete-body" className="mt-2 text-xs leading-relaxed text-ink-2">
               {t.confirmDeleteMessage}
             </p>
-            <div className="flex items-center justify-end gap-2">
+            <p className="mt-3 truncate font-mono text-[11px] text-ink-3">
+              {pendingDelete.name}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
               <button
-                onClick={() => setDeleteId(null)}
-                className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors cursor-pointer"
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                className="btn-ghost"
               >
                 {t.cancel}
               </button>
               <button
-                onClick={() => handleDeleteSecret(deleteId)}
-                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                ref={confirmRef}
+                type="button"
+                onClick={() => void handleDelete()}
+                className="btn bg-danger px-3 text-[13px] text-white hover:opacity-90"
               >
                 {t.delete}
               </button>
@@ -559,3 +635,21 @@ export const VaultApp: React.FC = () => {
     </div>
   );
 };
+
+interface EmptyStateProps {
+  title: string;
+  subtitle: string;
+  actionLabel: string;
+  onAction: () => void;
+}
+
+const EmptyState: React.FC<EmptyStateProps> = ({ title, subtitle, actionLabel, onAction }) => (
+  <div className="flex flex-col items-center justify-center px-4 py-20 text-center">
+    <KeyStashLogo className="mb-4 size-7 opacity-90" />
+    <h2 className="text-[13px] font-medium tracking-tight text-ink">{title}</h2>
+    <p className="mt-1.5 max-w-xs text-xs leading-relaxed text-ink-2">{subtitle}</p>
+    <button type="button" onClick={onAction} className="btn-primary mt-5">
+      {actionLabel}
+    </button>
+  </div>
+);

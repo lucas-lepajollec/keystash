@@ -22,32 +22,34 @@ KeyStash is **not** an enterprise secrets engine like HashiCorp Vault or Infisic
 ## 2. Product preview
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  KeyStash                                                  + New secret     │
-│                                                                             │
-│  [ / or Ctrl+K ] Search secrets, categories, notes...                       │
-│                                                                             │
-│  All     AI     Development     Infrastructure     Finance     Other        │
-│                                                                             │
-│  Anthropic                                                                  │
-│  Claude 3.7 production API key                         [ AI ] [ Production ] │
-│  sk-ant-••••••••••••••••3a8f                              [ Copy ]   [···]  │
-│                                                                             │
-│  GitHub                                                                     │
-│  Personal access token for Forgejo mirror              [ Development ]      │
-│  ghp_••••••••••••••••••9e12                               [ Copy ]   [···]  │
-│                                                                             │
-│  Cloudflare                                                                 │
-│  DNS management API token                              [ Infrastructure ]   │
-│  v1.0-••••••••••••••••88cb                                [ Copy ]   [···]  │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  ⬡ KeyStash  8 secrets                              EN   ☀   🔒  + New secret │
+│                                                                              │
+│  ⌕  Search secrets, categories, tags or notes                   /   Ctrl K   │
+│                                                                              │
+│  All 8    AI 2    Development 3    Infrastructure 2    Media 1               │
+│                                                                              │
+│  Forgejo  Development                            fgo••••••••1a0b  👁  Copy  ⋯ │
+│  Self-hosted git server access token                                        │
+│  #self-hosted #git                                                          │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  Cloudflare  Infrastructure                    clf••••••••9876  👁  Copy  ⋯ │
+│  Global API token with DNS Edit Zone permissions                            │
+│  #dns #zones                                                                 │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  Anthropic  AI                               sk-ant-••••••••6789  👁  Copy  ⋯ │
+│  API key with Claude 3.7 Sonnet access                                      │
+│  #production #claude-3-7                                                    │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 3. Highlights
 
 - **Instant zero-latency copy**: Copy your token to clipboard in 1 click with instantaneous visual confirmation.
-- **Fast keyboard navigation**: Focus search with `/` or `Ctrl+K` (`Cmd+K`), close modals with `Escape`, navigate with arrow keys.
-- **Calm, distraction-free UI**: Inspired by the serene aesthetics of Linear, Raycast, and 1Password. Polished graphite dark mode and crisp light mode.
+- **Fast keyboard navigation**: Focus search with `/` or `Ctrl+K` (`Cmd+K`), close panels with `Escape`, create with `N`, navigate rows with arrow keys and copy with `Enter`.
+- **Calm, distraction-free UI**: Inspired by the serene aesthetics of Linear, Raycast, and 1Password. Polished graphite dark mode and crisp light mode, both meeting WCAG AA contrast.
+- **Reveal on demand**: Values stay masked until you explicitly reveal them, then re-mask automatically after 15 seconds.
+- **Accessible by construction**: Full keyboard reach, visible focus rings, semantic landmarks, screen-reader labels on every control, and reduced-motion support.
 - **Encrypted at rest**: Secrets encrypted with **AES-256-GCM**. Encryption master key strictly separated from the SQLite database.
 - **Argon2id authentication**: Local master password hashing with rate-limited login protection.
 - **Zero cloud dependencies**: Runs 100% locally on your NAS or server with SQLite in WAL mode.

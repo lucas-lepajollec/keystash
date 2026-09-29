@@ -1,129 +1,436 @@
 @import "tailwindcss";
 
+/* ============================================================
+   KeyStash design tokens
+
+   Discipline, borrowed from Vercel's published system:
+   - Depth comes from tonal steps and hairline rings, never drop shadows.
+   - Radius is capped at 6px. Sharpness is the point.
+   - Colour is functional. Violet marks selection, focus and the primary
+     action — nothing else. Everything else is a neutral step.
+   - Labels and metadata are monospace, uppercase, small, widely tracked.
+   - Near-black (#171717 / #ededed), never pure #000 / #fff for text.
+
+   One accent ramp, theme-scoped, so a hardcoded violet can never reach
+   the light theme and drop below AA.
+   ============================================================ */
+
 @layer base {
   :root {
-    --bg-app: #f8fafc;
-    --bg-sidebar: #f1f5f9;
+    color-scheme: light;
+
+    /* Surfaces — four tonal steps, no translucency anywhere */
+    --bg-canvas: #fafafa;
     --bg-surface: #ffffff;
-    --bg-surface-elevated: #e2e8f0;
-    --border-subtle: #e2e8f0;
-    --border-active: #cbd5e1;
-    --border-focus: #7c3aed;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
-    --accent: #7c3aed;
-    --accent-hover: #6d28d9;
-    --accent-subtle: rgba(124, 58, 237, 0.06);
+    --bg-raised: #ffffff;
+    --bg-sunken: #f4f4f5;
+    --bg-inset: #fafafa;
+    --bg-inverse: #171717;
+
+    /* Hairlines */
+    --line: #ebebeb;
+    --line-strong: #dcdcdc;
+
+    /* Ink */
+    --ink: #171717;
+    --ink-2: #4d4d4d;
+    --ink-3: #6e6e6e;
+    --ink-on-inverse: #fafafa;
+
+    /* Functional accent — the only chromatic colour in the system */
+    --accent: #6d28d9;
+    --accent-hover: #5b21b6;
+    --accent-on: #ffffff;
+    --accent-ink: #6d28d9;
+    --accent-soft: #f4f0ff;
+    --accent-line: #d9c9fb;
+
+    --danger: #c02626;
+    --danger-soft: #fdf2f2;
+    --danger-line: #f3cfcf;
+    --success: #166534;
+    --success-soft: #eefaf1;
+    --success-line: #bfe6cb;
+
+    --focus: #6d28d9;
+    --overlay: rgb(23 23 23 / 0.4);
   }
 
   .dark {
-    --bg-app: #090a0c;
-    --bg-sidebar: #0c0e12;
-    --bg-surface: #111318;
-    --bg-surface-elevated: #161922;
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-active: rgba(255, 255, 255, 0.12);
-    --border-focus: #7c3aed;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --accent: #7c3aed;
-    --accent-hover: #8b5cf6;
-    --accent-subtle: rgba(124, 58, 237, 0.12);
+    color-scheme: dark;
+
+    --bg-canvas: #0a0a0a;
+    --bg-surface: #111111;
+    --bg-raised: #171717;
+    --bg-sunken: #0d0d0d;
+    --bg-inset: #0d0d0d;
+    --bg-inverse: #fafafa;
+
+    --line: #262626;
+    --line-strong: #383838;
+
+    --ink: #ededed;
+    --ink-2: #a3a3a3;
+    --ink-3: #8a8a8a;
+    --ink-on-inverse: #171717;
+
+    --accent: #6d28d9;
+    --accent-hover: #7c3aed;
+    --accent-on: #ffffff;
+    --accent-ink: #c4b5fd;
+    --accent-soft: #1c1430;
+    --accent-line: #3b2d63;
+
+    --danger: #f87171;
+    --danger-soft: #2a1414;
+    --danger-line: #4d2626;
+    --success: #4ade80;
+    --success-soft: #10251a;
+    --success-line: #1f4430;
+
+    --focus: #a78bfa;
+    --overlay: rgb(0 0 0 / 0.6);
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--ink);
+    font-family:
+      var(--font-sans),
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
   }
 }
 
-body {
-  background-color: var(--bg-app);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.01em;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+@theme inline {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-raised: var(--bg-raised);
+  --color-sunken: var(--bg-sunken);
+  --color-inset: var(--bg-inset);
+  --color-inverse: var(--bg-inverse);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+
+  --font-sans:
+    var(--font-geist), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    var(--font-mono-stack), ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    Monaco, Consolas, monospace;
 }
 
-input, button, textarea, select {
-  font-family: inherit;
+/* ============================================================
+   Components
+
+   Depth is a hairline ring rendered as a zero-blur, 1px-spread
+   shadow rather than a CSS border. The technique lets the ring
+   survive any background and keeps the box model untouched.
+   ============================================================ */
+
+@layer components {
+  .ring-hair {
+    box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .ring-hair-strong {
+    box-shadow: 0 0 0 1px var(--line-strong);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.15rem;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease,
+      box-shadow 0.12s ease;
+  }
+
+  .btn:disabled,
+  .btn-primary:disabled,
+  .btn-ghost:disabled,
+  .btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.15rem;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease;
+    background-color: var(--accent);
+    color: var(--accent-on);
+    padding: 0.4375rem 0.75rem;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 450;
+    line-height: 1.15rem;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease,
+      box-shadow 0.12s ease;
+    background-color: transparent;
+    color: var(--ink-2);
+    padding: 0.4375rem 0.75rem;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--bg-sunken);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line-strong);
+  }
+
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease;
+    width: 28px;
+    height: 28px;
+    color: var(--ink-3);
+    background-color: transparent;
+  }
+
+  .btn-icon:hover:not(:disabled) {
+    background-color: var(--bg-sunken);
+    color: var(--ink);
+  }
+
+  .field {
+    width: 100%;
+    background-color: var(--bg-surface);
+    border: 0;
+    border-radius: 6px;
+    padding: 0.4375rem 0.625rem;
+    font-size: 13px;
+    line-height: 1.15rem;
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line);
+    transition: box-shadow 0.12s ease;
+  }
+
+  .field::placeholder {
+    color: var(--ink-3);
+  }
+
+  .field:hover {
+    box-shadow: 0 0 0 1px var(--line-strong);
+  }
+
+  .field:focus {
+    outline: none;
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 0 3px var(--accent-soft);
+  }
+
+  /* Monospace uppercase stamp — the system's signature for labels */
+  .stamp {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1rem;
+    letter-spacing: 0.071em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 4px;
+    background-color: var(--bg-sunken);
+    box-shadow: 0 0 0 1px var(--line);
+    color: var(--ink-3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--line-strong);
+    border-top-color: var(--accent);
+    animation: ks-spin 0.6s linear infinite;
+  }
 }
 
-/* Tactile Keyboard Key (Raycast signature) */
-.kbd-key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1;
-  padding: 2.5px 5px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary);
-  user-select: none;
+@keyframes ks-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-:root:not(.dark) .kbd-key {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #475569;
+@keyframes ks-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* Sober Primary Button (#7C3AED solid, hover #8B5CF6, zero glow) */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  background-color: #7c3aed;
-  color: #ffffff;
-  font-weight: 500;
-  font-size: 0.8125rem;
-  line-height: 1.25rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.12s ease, opacity 0.12s ease;
-  cursor: pointer;
-  user-select: none;
+@keyframes ks-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.btn-primary:hover {
-  background-color: #8b5cf6;
+.anim-sheet-in {
+  animation: ks-sheet-in 0.14s ease-out both;
 }
 
-.btn-primary:active {
-  background-color: #6d28d9;
+.anim-fade-in {
+  animation: ks-fade-in 0.12s ease-out both;
 }
 
-/* Discrete Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* ============================================================
+   Scrollbars
+   ============================================================ */
+
+.ks-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
+
+.ks-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ks-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.16);
+
+.ks-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
 }
 
-/* Hide scrollbar */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.ks-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-3);
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

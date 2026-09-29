@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Translations, Locale } from '@/lib/i18n';
-import { KeyStashLogo } from './KeyStashLogo';
-import { KeyRound, Globe, Sun, Moon } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
+import type { Locale, Translations } from '@/lib/i18n';
+import { AuthShell } from './AuthShell';
 
 interface LoginViewProps {
   t: Translations;
@@ -38,113 +38,57 @@ export const LoginView: React.FC<LoginViewProps> = ({
         body: JSON.stringify({ password }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        if (res.status === 429) {
-          setError(t.rateLimited);
-        } else {
-          setError(data.error || t.invalidPassword);
-        }
+        const data = await res.json().catch(() => ({}));
+        setError(res.status === 429 ? t.rateLimited : (data.error ?? t.invalidPassword));
         setLoading(false);
         return;
       }
 
       onLoginSuccess();
     } catch {
-      setError('Connection error');
+      setError(t.connectionError);
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[var(--bg-app)]">
-      {/* Top toolbar */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1 bg-[var(--bg-surface)]">
-          <Globe className="w-3.5 h-3.5 opacity-70" />
-          <select
-            value={currentLocale}
-            onChange={(e) => onLocaleChange(e.target.value as Locale)}
-            className="bg-transparent border-none outline-none cursor-pointer uppercase font-mono font-medium text-[var(--text-primary)] text-xs"
-          >
-            <option value="en">EN</option>
-            <option value="fr">FR</option>
-            <option value="es">ES</option>
-            <option value="de">DE</option>
-          </select>
-        </div>
-        <button
-          onClick={onToggleTheme}
-          className="p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-          title={t.themeToggle}
-        >
-          {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-violet-400" />}
-        </button>
-      </div>
-
-      <div className="w-full max-w-sm">
-        <div className="rounded-xl p-7 bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] shadow-xl">
-          {/* Logo mark */}
-          <div className="flex justify-center mb-5">
-            <KeyStashLogo className="w-10 h-10" />
-          </div>
-
-          <h1 className="text-base font-semibold text-center tracking-tight mb-1 text-[var(--text-primary)]">
-            {t.loginTitle}
-          </h1>
-          <p className="text-xs text-center text-[var(--text-secondary)] mb-5">
-            {t.loginSubtitle}
-          </p>
-
-          {error && (
-            <div className="mb-4 p-2.5 rounded-lg text-xs bg-red-500/10 border border-red-500/20 text-red-400">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                {t.masterPasswordLabel}
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.masterPasswordPlaceholder}
-                  className="w-full pl-3 pr-9 py-2 bg-[var(--bg-app)] border border-[var(--border-subtle)] focus:border-violet-500 rounded-lg text-xs outline-none transition-colors placeholder:text-[var(--text-muted)] text-[var(--text-primary)]"
-                />
-                <KeyRound className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-3 top-2.5" />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-2 text-xs justify-center"
-            >
-              {loading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{t.saving}</span>
-                </>
-              ) : (
-                <span>{t.loginButton}</span>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Discreet footer brand */}
-        <div className="text-center mt-5">
-          <span className="text-[11px] font-mono text-[var(--text-muted)] tracking-wider">
-            KeyStash · Encrypted Vault
-          </span>
+    <AuthShell
+      title={t.loginTitle}
+      subtitle={t.loginSubtitle}
+      error={error}
+      isDark={isDark}
+      locale={currentLocale}
+      t={t}
+      onLocaleChange={onLocaleChange}
+      onToggleTheme={onToggleTheme}
+      submitLabel={t.loginButton}
+      loading={loading}
+      onSubmit={handleSubmit}
+    >
+      <div>
+        <label htmlFor="master-password" className="field-label">
+          {t.masterPasswordLabel}
+        </label>
+        <div className="relative">
+          <input
+            id="master-password"
+            name="master-password"
+            type="password"
+            required
+            autoFocus
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t.passwordPlaceholder}
+            className="field pr-9"
+          />
+          <KeyRound
+            className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-ink-3"
+            aria-hidden="true"
+          />
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 };

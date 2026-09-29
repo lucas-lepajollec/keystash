@@ -3,14 +3,16 @@ import React, { useId } from 'react';
 interface KeyStashLogoProps {
   className?: string;
   size?: number;
+  title?: string;
 }
 
 export const KeyStashLogo: React.FC<KeyStashLogoProps> = ({
-  className = 'w-5 h-5',
+  className = 'size-5',
   size,
+  title,
 }) => {
-  const rawId = useId();
-  const gradientId = `ks-logo-grad-${rawId.replace(/:/g, '')}`;
+  const gradientId = `ks-logo-${useId().replace(/:/g, '')}`;
+  const labelled = Boolean(title);
 
   return (
     <svg
@@ -20,7 +22,10 @@ export const KeyStashLogo: React.FC<KeyStashLogoProps> = ({
       viewBox="0 0 256 256"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="KeyStash logo"
+      role={labelled ? 'img' : undefined}
+      aria-label={labelled ? title : undefined}
+      aria-hidden={labelled ? undefined : true}
+      focusable="false"
     >
       <defs>
         <linearGradient
