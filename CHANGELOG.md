@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Update Vitest to 5.0.4 and align Node 22 types, removing the vulnerable worker/mocker test chain; development requires Node 22.12 or newer in the supported Node 22 line.
+
 - Patch Next.js to 16.3.8 and refresh compatible dependency security fixes without changing the runtime major.
 
 ## [0.1.0] - 2026-09-28

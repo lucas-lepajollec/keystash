@@ -127,6 +127,8 @@ KeyStash is packaged as a lean single-container service:
 
 ## 8. Development and quality
 
+Use Node 22.12 or newer within the Node 22 line for the Vitest 5 test suite.
+
 ```bash
 # Clone the repository
 git clone https://github.com/lucas-lepajollec/keystash.git
